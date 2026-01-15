@@ -44,20 +44,19 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, gameState,
   
   return (
     <div 
-      className="modal-backdrop pointer-events-auto" 
-      style={{ pointerEvents: 'auto', touchAction: 'auto' }} 
+      className="modal-backdrop" 
       onClick={(e) => {
-        // Only close if clicking strictly on the backdrop
+        // Only close if clicking the backdrop itself
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div 
-        className="glass-panel w-full max-w-5xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-purple-500/30 shadow-[0_0_50px_rgba(147,51,234,0.1)] pointer-events-auto relative z-50"
-        style={{ pointerEvents: 'auto', touchAction: 'auto' }}
+        className="glass-panel w-full max-w-5xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-purple-500/30 shadow-[0_0_50px_rgba(147,51,234,0.1)] relative z-[3001]"
+        onClick={(e) => e.stopPropagation()} // Stop any clicks inside from reaching the backdrop handler
       >
         
         {/* Header */}
-        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40 pointer-events-auto relative z-50">
+        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
           <div>
               <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 header-font">
                 EVOLUTIONARY MATRIX
@@ -65,15 +64,15 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, gameState,
               <p className="text-gray-400 text-sm mt-1 font-mono">Select nodes to advance universal complexity.</p>
           </div>
           <button 
-            onClick={(e) => { e.stopPropagation(); onClose(); }} 
-            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors text-white pointer-events-auto relative z-50 cursor-pointer"
+            onClick={onClose} 
+            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors text-white cursor-pointer z-50"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-black/30 pointer-events-auto relative z-40">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-black/30">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {getVisibleUpgrades().map(upgrade => (
                 <UpgradeCard 
@@ -88,7 +87,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, gameState,
         </div>
         
         {/* Footer */}
-        <div className="p-4 bg-black/60 border-t border-white/10 flex justify-between text-xs text-gray-500 uppercase tracking-widest font-mono pointer-events-auto relative z-50">
+        <div className="p-4 bg-black/60 border-t border-white/10 flex justify-between text-xs text-gray-500 uppercase tracking-widest font-mono">
             <span>Available Karma: {gameState.karma}</span>
             <span>Upgrades Unlocked: {gameState.unlockedUpgrades.size}</span>
         </div>

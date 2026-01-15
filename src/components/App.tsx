@@ -1,7 +1,7 @@
 
 import React, { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GameState, GameAction, EnergyOrb, ProjectionState } from '../types';
-import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, NODE_IMAGE_MAP } from './constants';
+import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, CROSSROADS_EVENTS, NODE_IMAGE_MAP } from './constants';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { audioService } from '../services/AudioService';
 import { generateNodeImage } from '../services/geminiService';
@@ -30,11 +30,13 @@ const LIFE_BIOMASS_RATE = 0.2;
 const COLLECTIVE_UNITY_RATE = 0.1;
 const DATA_GENERATION_RATE = 0.2;
 const STAR_ORB_SPAWN_CHANCE = 0.005;
-const PLAYER_HUNT_RANGE = 150;
+const PHAGE_SPAWN_CHANCE = 0.0005;
+const PHAGE_ATTRACTION = 0.02;
+const PHAGE_DRAIN_RATE = 0.1;
 const SUPERNOVA_WARNING_TICKS = 1800; 
 const ANOMALY_DURATION_TICKS = 1200; 
 const BLOOM_DURATION_TICKS = 2400; 
-const BLACK_HOLE_DURATION_TICKS = 3600; 
+const BLOOM_SPAWN_MULTIPLIER = 5;
 
 const AIM_ROTATION_SPEED = 0.05; 
 const POWER_OSCILLATION_SPEED = 1.5; 
@@ -152,13 +154,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'TICK': {
       if (state.isPaused) return state;
       let nextState = { ...state };
-      const { width, transform } = action.payload;
-      const height = action.payload.height; // Explicitly use height to avoid unused var warning if destructured alone
+      const { width, height, transform } = action.payload;
       const worldRadius = (Math.min(width, height) * 1.5) / (state.zoomLevel + 1);
       
       let mutableNodes = nextState.nodes.map(n => ({...n}));
       let playerNode = mutableNodes.find(n => n.type === 'player_consciousness');
 
+      // --- Player Projection Mechanics ---
       if (playerNode) {
           switch (nextState.projection.playerState) {
             case 'AIMING_DIRECTION': {
@@ -228,6 +230,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
       }
 
+      // --- Resource Calculation ---
       let harmonyBonus = 1.0;
       let chaosPenalty = 1.0;
       if (nextState.karma > HARMONY_THRESHOLD) harmonyBonus = 1.25; 
@@ -253,6 +256,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newEnergyOrbs: EnergyOrb[] = [];
       let nextCosmicEvents = [...nextState.cosmicEvents];
       
+      // --- Supernova Logic ---
       const hasSupernovaWarning = nextCosmicEvents.some(e => e.type === 'supernova' && e.phase === 'warning');
       let supernovaChance = 0.0002;
       if (nextState.karma < CHAOS_THRESHOLD) supernovaChance *= 3; 
@@ -273,8 +277,70 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               nextState.notifications.push('A star shows signs of instability...');
           }
       }
+
+      // --- Cosmic Event Spawning ---
+      if (Math.random() < 0.0001) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * worldRadius * 0.8;
+          nextCosmicEvents.push({
+              id: `anomaly_${Date.now()}`,
+              type: 'gravitational_anomaly',
+              x: Math.cos(angle) * dist,
+              y: Math.sin(angle) * dist,
+              radius: 50,
+              duration: ANOMALY_DURATION_TICKS,
+          });
+      }
       
-      // Node Physics
+      // --- Phage Logic ---
+      if (nextState.gameStarted && Math.random() < PHAGE_SPAWN_CHANCE) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = worldRadius + 100;
+          nextState.phages.push({
+              id: `phage_${Date.now()}`,
+              x: Math.cos(angle) * dist,
+              y: Math.sin(angle) * dist,
+              vx: 0, vy: 0,
+              radius: 12,
+              targetNodeId: null,
+              state: 'seeking'
+          });
+          if (nextState.phages.length === 1) nextState.notifications.push('A Quantum Phage has entered the sector.');
+      }
+
+      nextState.phages = nextState.phages.map(phage => {
+          let ax = 0, ay = 0;
+          if (playerNode) {
+              const dx = playerNode.x - phage.x;
+              const dy = playerNode.y - phage.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist > 0) {
+                  ax = (dx / dist) * PHAGE_ATTRACTION;
+                  ay = (dy / dist) * PHAGE_ATTRACTION;
+              }
+              if (dist < playerNode.radius + phage.radius + 10) {
+                  nextState.energy = Math.max(0, nextState.energy - PHAGE_DRAIN_RATE);
+                  nextState.knowledge = Math.max(0, nextState.knowledge - PHAGE_DRAIN_RATE);
+              }
+          }
+          return {
+              ...phage,
+              vx: (phage.vx + ax) * 0.95,
+              vy: (phage.vy + ay) * 0.95,
+              x: phage.x + phage.vx,
+              y: phage.y + phage.vy
+          };
+      });
+      
+      // --- Crossroads Check ---
+      if (!nextState.activeCrossroadsEvent && Math.random() < 0.0001) {
+          const event = CROSSROADS_EVENTS.find(e => e.trigger(nextState));
+          if (event) {
+              nextState.activeCrossroadsEvent = event;
+          }
+      }
+      
+      // --- Physics & Blooms ---
       mutableNodes.forEach(node => {
         if (node.type !== 'player_consciousness') {
             mutableNodes.forEach(otherNode => {
@@ -297,6 +363,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         node.vx *= friction;
         node.vy *= friction;
         
+        // World Boundary
         const distFromCenter = Math.sqrt(node.x * node.x + node.y * node.y);
         if (distFromCenter > worldRadius - node.radius) {
             const angle = Math.atan2(node.y, node.x);
@@ -305,6 +372,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             const dot = node.vx * Math.cos(angle) + node.vy * Math.sin(angle);
             node.vx -= 2 * dot * Math.cos(angle);
             node.vy -= 2 * dot * Math.sin(angle);
+        }
+
+        // Bloom Logic
+        const activeBlooms = nextCosmicEvents.filter(e => e.type === 'resource_bloom');
+        for (const bloom of activeBlooms) {
+            const bx = bloom.x || 0;
+            const by = bloom.y || 0;
+            const br = bloom.radius || 100;
+            const dist = Math.hypot(node.x - bx, node.y - by);
+            if (dist < br) {
+                if (Math.random() < STAR_ORB_SPAWN_CHANCE * BLOOM_SPAWN_MULTIPLIER) {
+                    newEnergyOrbs.push({
+                        id: `orb_bloom_${Date.now()}_${Math.random()}`,
+                        x: node.x + (Math.random() - 0.5) * node.radius,
+                        y: node.y + (Math.random() - 0.5) * node.radius,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        radius: 5,
+                        isFromBloom: true,
+                    });
+                }
+            }
         }
 
         if (node.type === 'star' && Math.random() < STAR_ORB_SPAWN_CHANCE) {
@@ -461,6 +550,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (item.name === 'Quantum Stabilizer') ns.notifications = [...ns.notifications, 'Quantum fields stabilized!'];
         ns.inventory = state.inventory.filter(i => i.id !== itemId);
         return ns;
+    case 'CANCEL_CONNECTION_MODE':
+        return { ...state, connectMode: { active: false, sourceNodeId: null } };
+    case 'RESOLVE_CROSSROADS':
+        const { choiceEffect } = action.payload;
+        const stateAfterChoice = choiceEffect(state);
+        return { ...stateAfterChoice, activeCrossroadsEvent: null };
     case 'SAVE_GAME':
         try {
             const stateToSave = { ...state, unlockedUpgrades: Array.from(state.unlockedUpgrades) };
@@ -520,18 +615,16 @@ const App: React.FC = () => {
 
   useGameLoop(dispatch, dimensions, gameState.isPaused, transform);
 
-  const startGame = useCallback(() => {
-    // Start game immediately with default/placeholder images to prevent UI sticking
-    dispatch({ type: 'START_GAME', payload: { playerImageUrl: NODE_IMAGE_MAP.player_consciousness[0] } });
-    
-    // Fetch improved images in background
-    generateNodeImage(getNodeImagePrompt('player_consciousness')).then(url => {
-        if (url) dispatch({ type: 'UPDATE_NODE_IMAGE', payload: { nodeId: 'player_consciousness', imageUrl: url } });
-    });
-    
-    generateNodeImage(getNodeImagePrompt('rocky_planet')).then(url => {
-        if (url) dispatch({ type: 'UPDATE_NODE_IMAGE', payload: { nodeId: 'tutorial_planet', imageUrl: url } });
-    });
+  const startGame = useCallback(async () => {
+    const playerImagePromise = generateNodeImage(getNodeImagePrompt('player_consciousness'));
+    const planetImagePromise = generateNodeImage(getNodeImagePrompt('rocky_planet'));
+    const [playerImageUrl, planetImageUrl] = await Promise.all([playerImagePromise, planetImagePromise]);
+    dispatch({ type: 'START_GAME', payload: { playerImageUrl: playerImageUrl || NODE_IMAGE_MAP.player_consciousness[0] } });
+    setTimeout(() => {
+      if (planetImageUrl) {
+        dispatch({ type: 'UPDATE_NODE_IMAGE', payload: { nodeId: 'tutorial_planet', imageUrl: planetImageUrl } });
+      }
+    }, 10);
   }, []);
 
   const loadGame = useCallback(() => {

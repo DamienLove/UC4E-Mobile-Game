@@ -23,6 +23,7 @@ interface SimulationProps {
 }
 
 const PLAYER_HUNT_RANGE = 150;
+const REFORM_DURATION = 120; // Must match constant in App.tsx
 
 const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, isPanningRef }) => {
   const { width, height } = dimensions;
@@ -33,7 +34,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
     dispatch({ type: 'SELECT_NODE', payload: { nodeId } });
   };
   
-  const handlePlayerInteraction = () => {
+  const handlePlayerInteraction = (e: React.MouseEvent) => {
     switch (gameState.projection.playerState) {
         case 'IDLE':
             dispatch({ type: 'START_AIMING' });
@@ -54,7 +55,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         if(gameState.selectedNodeId) {
             dispatch({ type: 'SELECT_NODE', payload: { nodeId: null } });
         } else {
-             handlePlayerInteraction();
+             handlePlayerInteraction(e);
         }
     }
   };
@@ -183,6 +184,22 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                 transform: `scale(${p.life / 20})`,
             }} />
         ))}
+         {playerNode && gameState.projection.playerState === 'REFORMING' && (
+             <>
+              {Array.from({length: 20}).map((_, i) => {
+                  const angle = (i/20) * Math.PI * 2;
+                  const dist = (gameState.projection.reformTimer / REFORM_DURATION) * 150;
+                  return (
+                      <div key={i} className="reforming-particle" style={{
+                          left: `${playerNode.x}px`, top: `${playerNode.y}px`,
+                          width: '4px', height: '4px',
+                          '--x-start': `${Math.cos(angle) * dist}px`,
+                          '--y-start': `${Math.sin(angle) * dist}px`,
+                      } as React.CSSProperties}/>
+                  );
+              })}
+             </>
+        )}
 
         {/* Render Connection Pulses */}
         {gameState.connectionParticles.map(particle => {
@@ -269,6 +286,20 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             }
             return null;
         })}
+
+        {/* Render Phages */}
+        {gameState.phages.map(phage => (
+            <div
+                key={phage.id}
+                className="phage-entity"
+                style={{
+                    left: `${phage.x}px`,
+                    top: `${phage.y}px`,
+                    width: `${phage.radius * 2}px`,
+                    height: `${phage.radius * 2}px`,
+                }}
+            />
+        ))}
 
         {/* Render Anomaly Particles */}
         {gameState.anomalyParticles.map(p => (
@@ -385,6 +416,8 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                 node.tunnelingState ? `tunnel-${node.tunnelingState.phase}` : ''
             ].join(' ');
             
+            const isHidden = isPlayer && gameState.projection.playerState === 'REFORMING';
+
             return (
                 <div
                     key={node.id}
@@ -392,7 +425,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                     onClick={(e) => {
                         e.stopPropagation();
                         if (isPlayer) {
-                           handlePlayerInteraction();
+                           handlePlayerInteraction(e);
                         } else {
                            handleNodeClick(node.id);
                         }
@@ -401,6 +434,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                     style={{
                         left: `${node.x}px`, top: `${node.y}px`,
                         width: `${node.radius * 2}px`, height: `${node.radius * 2}px`,
+                        opacity: isHidden ? 0 : 1,
                         cursor: isPlayer ? 'pointer' : 'pointer',
                     } as React.CSSProperties}
                 >

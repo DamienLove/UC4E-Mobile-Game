@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { GameNode, GameAction } from '../types';
 

@@ -20,9 +20,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
   const [hasSaveGame, setHasSaveGame] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
-
   useEffect(() => {
-    // Check for a save game and start theme music
     setHasSaveGame(localStorage.getItem(SAVE_GAME_KEY) !== null);
     audioService.userInteraction().then(() => {
         audioService.playThemeMusic();
@@ -33,7 +31,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
       setIsStarting(true);
       audioService.stopThemeMusic();
       await onStartGame();
-      // No need to set isStarting to false, as the component will unmount.
   };
   
   const handleLoadGameWithMusic = () => {
@@ -42,81 +39,73 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center text-center p-4 splash-screen">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900 via-gray-900 to-black"></div>
       <div className="absolute inset-0 particle-container">
         {Array.from({ length: 50 }).map((_, i) => (
-          <div key={i} className="particle particle-neutral" style={{
-            '--size': `${Math.random() * 2 + 1}px`,
-            '--duration': `${Math.random() * 40 + 30}s`,
-            '--delay': `${Math.random() * -60}s`,
-            '--x-start': `${Math.random() * 100}vw`,
-            '--y-start': `${Math.random() * 100}vh`,
-            '--x-end': `${Math.random() * 100}vw`,
-            '--y-end': `${Math.random() * 100}vh`,
+          <div key={i} className="particle" style={{
+            '--tx': `${Math.random() * 200 - 100}px`,
+            '--ty': `${Math.random() * 200 - 100}px`,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            width: `${Math.random() * 3}px`,
+            height: `${Math.random() * 3}px`,
+            animationDuration: `${Math.random() * 10 + 10}s`
           } as React.CSSProperties} />
         ))}
       </div>
       
-      <div className="splash-nebula"></div>
-
-      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4">
-          <div className="animate-fade-in-slow mb-8 text-center">
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-teal-300 glow-text mb-4 header-font">
-              Universe Connected for Everyone
-              </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-purple-300 font-mono">
-              An interactive experience by Damien Nichols
-              </p>
-          </div>
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-md px-6 flex flex-col items-center gap-10">
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+          <div className="text-center animate-float">
+              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-400 drop-shadow-[0_0_25px_rgba(0,243,255,0.4)] tracking-tighter mb-2 header-font">
+                  UNIVERSE
+              </h1>
+              <h2 className="text-3xl md:text-4xl font-light tracking-[0.5em] text-cyan-100/80 header-font">
+                  CONNECTED
+              </h2>
+              <div className="h-1 w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mt-8"></div>
+          </div>
+
+          <div className="w-full flex flex-col gap-4 mt-4">
               <button
-                style={{ animationDelay: '1s' }}
                 onClick={handleStartGameWithMusic}
                 disabled={isStarting}
-                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button primary splash-menu-item"
+                className="neon-button primary h-16 w-full rounded-xl text-xl"
               >
-                {isStarting ? 'Generating...' : 'New Game'}
+                {isStarting ? 'Initializing Sequence...' : 'Initialize Universe'}
               </button>
+              
               <button
-                style={{ animationDelay: '1.2s' }}
                 onClick={handleLoadGameWithMusic}
                 disabled={!hasSaveGame}
-                className={`w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item ${!hasSaveGame ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`neon-button h-14 w-full rounded-xl text-lg ${!hasSaveGame ? 'opacity-30' : ''}`}
               >
-                Load Game
+                Resume Simulation
               </button>
-              <button
-                style={{ animationDelay: '1.4s' }}
-                onClick={() => setModal('options')}
-                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
-              >
-                Options
-              </button>
-              <button
-               style={{ animationDelay: '1.6s' }}
-                onClick={() => setModal('credits')}
-                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
-              >
-                Credits
-              </button>
+              
+              <div className="flex gap-4">
+                  <button onClick={() => setModal('options')} className="neon-button h-12 flex-1 rounded-xl text-sm">
+                    Options
+                  </button>
+                  <button onClick={() => setModal('credits')} className="neon-button h-12 flex-1 rounded-xl text-sm">
+                    Credits
+                  </button>
+              </div>
           </div>
       </div>
       
-      <div className="absolute bottom-4 left-4 z-20">
-         <button
-            style={{ animationDelay: '1.8s' }}
-            onClick={() => setModal('audio')}
-            className="dev-menu-button splash-menu-item text-xs uppercase tracking-widest text-white/30 hover:text-white/80 transition-colors"
-          >
-            // DEV_ACCESS
+      <div className="absolute bottom-6">
+         <button onClick={() => setModal('audio')} className="text-white/20 hover:text-white/60 text-xs uppercase tracking-widest transition-colors font-mono">
+            // DEV_ACCESS_TERMINAL
           </button>
       </div>
       
       {modal === 'options' && <SettingsModal settings={settings} dispatch={dispatch} onClose={() => setModal(null)} />}
       {modal === 'credits' && <CreditsModal onClose={() => setModal(null)} />}
       {modal === 'audio' && <AudioUploadModal onClose={() => setModal(null)} />}
-
     </div>
   );
 };

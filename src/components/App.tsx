@@ -1,10 +1,10 @@
 
 import React, { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { GameState, GameAction, Upgrade, EnergyOrb, GameNode, QuantumPhage, CollectionEffect, CosmicEvent, AnomalyParticle, ConnectionParticle, WorldTransform, ProjectionState, CollectedItem } from '../types';
-import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, CROSSROADS_EVENTS, NODE_IMAGE_MAP } from './constants';
+import { GameState, GameAction, EnergyOrb, ProjectionState } from '../types';
+import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, NODE_IMAGE_MAP } from './constants';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { audioService } from '../services/AudioService';
-import { generateNodeImage, getGeminiLoreForNode } from '../services/geminiService';
+import { generateNodeImage } from '../services/geminiService';
 import { useWorldScale } from '../hooks/useWorldScale';
 
 import Simulation from './Simulation';
@@ -23,26 +23,18 @@ import SettingsModal from './SettingsModal';
 import { getNodeImagePrompt } from '../services/promptService';
 
 
-// Constants for game balance (Unchanged)
+// Constants for game balance
 const BASE_KNOWLEDGE_RATE = 0.1;
 const STAR_ENERGY_RATE = 0.5;
 const LIFE_BIOMASS_RATE = 0.2;
 const COLLECTIVE_UNITY_RATE = 0.1;
 const DATA_GENERATION_RATE = 0.2;
 const STAR_ORB_SPAWN_CHANCE = 0.005;
-const PHAGE_SPAWN_CHANCE = 0.0001;
-const PHAGE_ATTRACTION = 0.01;
-const PHAGE_DRAIN_RATE = 0.5;
 const PLAYER_HUNT_RANGE = 150;
 const SUPERNOVA_WARNING_TICKS = 1800; 
-const SUPERNOVA_EXPLOSION_TICKS = 120; 
 const ANOMALY_DURATION_TICKS = 1200; 
-const ANOMALY_PULL_STRENGTH = 0.1;
 const BLOOM_DURATION_TICKS = 2400; 
-const BLOOM_SPAWN_MULTIPLIER = 20;
-const BLACK_HOLE_SPAWN_CHANCE = 0.00005;
 const BLACK_HOLE_DURATION_TICKS = 3600; 
-const BLACK_HOLE_PULL_STRENGTH = 100;
 
 const AIM_ROTATION_SPEED = 0.05; 
 const POWER_OSCILLATION_SPEED = 1.5; 
@@ -52,10 +44,6 @@ const REFORM_DURATION = 120;
 
 const ORB_COLLECTION_LEEWAY = 10; 
 const AIM_ASSIST_ANGLE = 0.1; 
-
-const TUNNEL_CHANCE_PER_TICK = 0.0005;
-const TUNNEL_DISTANCE = 400;
-const TUNNEL_DURATION_TICKS = 60; 
 
 const SAVE_GAME_KEY = 'universe-connected-save';
 
@@ -161,11 +149,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         notifications: ['The cosmos awakens to your presence.'] 
       };
     }
-    // ... [Previous logic for TICK, UPGRADES, etc. remains identical, just compacting for brevity in this response] ...
     case 'TICK': {
       if (state.isPaused) return state;
       let nextState = { ...state };
-      const { width, height, transform } = action.payload;
+      const { width, transform } = action.payload;
+      const height = action.payload.height; // Explicitly use height to avoid unused var warning if destructured alone
       const worldRadius = (Math.min(width, height) * 1.5) / (state.zoomLevel + 1);
       
       let mutableNodes = nextState.nodes.map(n => ({...n}));
@@ -262,7 +250,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         nextState.data += DATA_GENERATION_RATE;
       }
       
-      const nodesToRemove = new Set<string>();
       let newEnergyOrbs: EnergyOrb[] = [];
       let nextCosmicEvents = [...nextState.cosmicEvents];
       
@@ -362,6 +349,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       nextState.nodes = mutableNodes;
       nextState.energyOrbs = [...nextState.energyOrbs, ...newEnergyOrbs];
       
+      // Update cosmic event durations
+      nextState.cosmicEvents = nextCosmicEvents
+        .map(e => ({...e, duration: e.duration - 1}))
+        .filter(e => e.duration > 0);
+
+      // Handle event transitions (e.g. warning to active)
+      nextState.cosmicEvents = nextState.cosmicEvents.map(e => {
+          if (e.type === 'supernova' && e.phase === 'warning' && e.duration <= 1) {
+              // Transform to active explosion
+              return {
+                  ...e,
+                  phase: 'active',
+                  duration: 120, // Reset duration for explosion
+                  radius: (e.radius || 100) * 1.5 // Expand radius
+              };
+          }
+          return e;
+      });
+
       const currentChapter = CHAPTERS[nextState.currentChapter];
       if (currentChapter && nextState.currentChapter < CHAPTERS.length - 1) {
         const nextChapter = CHAPTERS[nextState.currentChapter + 1];

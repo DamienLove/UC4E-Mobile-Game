@@ -175,6 +175,24 @@ export const UPGRADES: Upgrade[] = [
         return { ...gs, karma: gs.karma + 20 };
     }
   },
+  {
+    id: 'cosmic_balance',
+    title: 'Cosmic Balance',
+    description: "Influence the universe's path towards harmony or chaos.",
+    cost: { knowledge: 500, biomass: 200 },
+    chapter: 3,
+    karmaRequirement: (k) => k < 0,
+    karmaRequirementText: 'Requires Chaotic Karma',
+    effect: (gs) => {
+      let newKarma = gs.karma;
+      if (gs.karma < 0) {
+        newKarma += 20;
+      } else if (gs.karma > 0) {
+        newKarma -= 20;
+      }
+      return { ...gs, karma: newKarma };
+    },
+  },
   // CHAPTER 4: Transcending Matter
   {
     id: 'quantum_computing',

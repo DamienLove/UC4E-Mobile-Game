@@ -70,7 +70,7 @@ class AudioService {
     for (let i = 0; i < len; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    return bytes.buffer;
+    return bytes.buffer as ArrayBuffer;
   }
 
   public async loadSound(id: string): Promise<void> {

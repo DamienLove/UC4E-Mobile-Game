@@ -1,10 +1,13 @@
+
 // FIX: Replaced mock service with a real implementation using the @google/genai SDK.
 import { GoogleGenAI } from "@google/genai";
 import { GameNode, Chapter } from '../types';
 
 
 // The API key is now accessed via import.meta.env, which Vite replaces during the build process.
-const apiKey = process.env.VITE_API_KEY as string;
+// We use a type assertion to any to avoid TS errors if the types aren't fully set up in vite-env.d.ts
+const apiKey = (import.meta as any).env.VITE_API_KEY as string;
+
 if (!apiKey) {
   // A simple console warning is better than throwing an error,
   // allowing the game to run in a limited state if the key is missing.
@@ -92,8 +95,8 @@ export const getGeminiLoreForNode = async (node: GameNode, chapter: Chapter): Pr
 const MAX_RETRIES = 5;
 const INITIAL_BACKOFF_MS = 1000;
 
-export const generateNodeImage = async (prompt: string): Promise<string | null> => {
-    if (!apiKey) return null;
+export const generateNodeImage = async (prompt: string): Promise<string | undefined> => {
+    if (!apiKey) return undefined;
     let retries = 0;
     while (retries < MAX_RETRIES) {
         try {
@@ -107,12 +110,13 @@ export const generateNodeImage = async (prompt: string): Promise<string | null> 
                 },
             });
 
-            if (response.generatedImages && response.generatedImages.length > 0) {
-                const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-                return `data:image/png;base64,${base64ImageBytes}`;
+            const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+
+            if (imageBytes) {
+                return `data:image/png;base64,${imageBytes}`;
             }
             console.warn("The image generation API did not return an image. This might be due to safety filters or a transient issue.");
-            return null; // Successful response but no image, so we don't retry.
+            return undefined; // Successful response but no image, so we don't retry.
         } catch (error: any) {
             // Check if it is a rate-limiting error by inspecting the error message.
             const errorMessage = (error.toString() || '').toLowerCase();
@@ -120,7 +124,7 @@ export const generateNodeImage = async (prompt: string): Promise<string | null> 
                 retries++;
                 if (retries >= MAX_RETRIES) {
                     console.error(`Error generating image after ${MAX_RETRIES} retries due to rate limiting.`, error);
-                    return null; // Max retries reached
+                    return undefined; // Max retries reached
                 }
                 // Calculate delay with exponential backoff and add random jitter
                 const delay = INITIAL_BACKOFF_MS * Math.pow(2, retries - 1) + Math.random() * 1000;
@@ -129,10 +133,10 @@ export const generateNodeImage = async (prompt: string): Promise<string | null> 
             } else {
                 // Not a rate-limiting error, so we fail immediately.
                 console.error(`Error generating image:`, error);
-                return null;
+                return undefined;
             }
         }
     }
     // Should not be reached, but as a fallback.
-    return null;
+    return undefined;
 };

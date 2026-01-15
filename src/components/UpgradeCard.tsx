@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Upgrade, GameState, NodeType } from '../types';
 import { getGeminiFlavorText, generateNodeImage } from '../services/geminiService';
@@ -78,12 +79,13 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
   return (
     <div 
       data-tutorial-id={upgrade.id}
-      className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
+      className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer pointer-events-auto relative z-10 ${
         unlocked ? 'bg-green-800/50 border-green-600' : 'bg-gray-800/80 border-gray-600 hover:border-purple-500'
       }`}
-      onClick={() => setIsExpanded(!isExpanded)}
+      style={{ pointerEvents: 'auto' }}
+      onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
     >
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start pointer-events-auto">
         <div>
           <h3 className="text-xl font-bold text-teal-300">{upgrade.title}</h3>
           <p className="text-gray-400 mt-1">{upgrade.description}</p>
@@ -91,7 +93,7 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
         <button
           onClick={handlePurchase}
           disabled={!canBuy || unlocked || exclusiveLock || isGeneratingImage}
-          className={`px-4 py-2 rounded transition-colors ml-4 whitespace-nowrap ${
+          className={`px-4 py-2 rounded transition-colors ml-4 whitespace-nowrap pointer-events-auto relative z-20 cursor-pointer ${
             unlocked ? 'bg-gray-600 cursor-not-allowed' :
             exclusiveLock ? 'bg-red-900 text-gray-500 cursor-not-allowed' :
             canBuy ? 'bg-purple-600 hover:bg-purple-500' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -101,7 +103,7 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
         </button>
       </div>
 
-      <div className="mt-2 flex justify-between items-center text-sm">
+      <div className="mt-2 flex justify-between items-center text-sm pointer-events-auto">
         <span className="text-yellow-400">{renderCost(upgrade.cost)}</span>
         <div className="text-xs text-right text-gray-500">
            <p>Chapter: {upgrade.chapter + 1}</p>
@@ -115,7 +117,7 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
       </div>
 
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-700 pointer-events-auto">
           {isLoadingFlavorText && <p className="text-gray-500 italic">Recalling passages from 'Universe Connected for Everyone'...</p>}
           {flavorText && !isLoadingFlavorText && (
             <blockquote className="text-purple-300 italic border-l-2 border-purple-400 pl-3">

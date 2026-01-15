@@ -1,9 +1,11 @@
 // This file was created by inferring types from their usage in other files.
 
 export interface ProjectionState {
-  playerState: 'IDLE' | 'AIMING_DIRECTION' | 'AIMING_POWER' | 'PROJECTING';
+  // FIX: Added REFORMING state and reformTimer to interface
+  playerState: 'IDLE' | 'AIMING_DIRECTION' | 'AIMING_POWER' | 'PROJECTING' | 'REFORMING';
   aimAngle: number;
   power: number; // 0 to 100
+  reformTimer: number;
 }
 
 export interface WorldTransform {

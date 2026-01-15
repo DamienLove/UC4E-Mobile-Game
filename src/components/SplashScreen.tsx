@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GameAction, GameState } from '../types';
 import SettingsModal from './SettingsModal';
@@ -60,10 +61,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
 
       <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4">
           <div className="animate-fade-in-slow mb-8 text-center">
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-teal-300 glow-text mb-4">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-teal-300 glow-text mb-4 header-font">
               Universe Connected for Everyone
               </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-purple-300">
+              <p className="text-lg sm:text-xl md:text-2xl text-purple-300 font-mono">
               An interactive experience by Damien Nichols
               </p>
           </div>
@@ -73,7 +74,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
                 style={{ animationDelay: '1s' }}
                 onClick={handleStartGameWithMusic}
                 disabled={isStarting}
-                className="w-full text-2xl font-bold py-3 px-8 rounded-lg splash-menu-button splash-menu-item"
+                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button primary splash-menu-item"
               >
                 {isStarting ? 'Generating...' : 'New Game'}
               </button>
@@ -81,21 +82,21 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
                 style={{ animationDelay: '1.2s' }}
                 onClick={handleLoadGameWithMusic}
                 disabled={!hasSaveGame}
-                className="w-full text-2xl font-bold py-3 px-8 rounded-lg splash-menu-button splash-menu-item"
+                className={`w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item ${!hasSaveGame ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Load Game
               </button>
               <button
                 style={{ animationDelay: '1.4s' }}
                 onClick={() => setModal('options')}
-                className="w-full text-2xl font-bold py-3 px-8 rounded-lg splash-menu-button splash-menu-item"
+                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
               >
                 Options
               </button>
               <button
                style={{ animationDelay: '1.6s' }}
                 onClick={() => setModal('credits')}
-                className="w-full text-2xl font-bold py-3 px-8 rounded-lg splash-menu-button splash-menu-item"
+                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
               >
                 Credits
               </button>
@@ -106,9 +107,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
          <button
             style={{ animationDelay: '1.8s' }}
             onClick={() => setModal('audio')}
-            className="dev-menu-button splash-menu-item"
+            className="dev-menu-button splash-menu-item text-xs uppercase tracking-widest text-white/30 hover:text-white/80 transition-colors"
           >
-            Dev Menu
+            // DEV_ACCESS
           </button>
       </div>
       

@@ -24,13 +24,13 @@ import { getNodeImagePrompt } from '../services/promptService';
 
 
 // Constants for game balance (Unchanged)
-const BASE_KNOWLEDGE_RATE = 0.1;
-const STAR_ENERGY_RATE = 0.5;
-const LIFE_BIOMASS_RATE = 0.2;
-const COLLECTIVE_UNITY_RATE = 0.1;
-const DATA_GENERATION_RATE = 0.2;
-const STAR_ORB_SPAWN_CHANCE = 0.005;
-const PHAGE_SPAWN_CHANCE = 0.0001;
+const BASE_KNOWLEDGE_RATE = 0.14;
+const STAR_ENERGY_RATE = 0.7;
+const LIFE_BIOMASS_RATE = 0.28;
+const COLLECTIVE_UNITY_RATE = 0.16;
+const DATA_GENERATION_RATE = 0.35;
+const STAR_ORB_SPAWN_CHANCE = 0.015;
+const PHAGE_SPAWN_CHANCE = 0.00018;
 const PHAGE_ATTRACTION = 0.01;
 const PHAGE_DRAIN_RATE = 0.5;
 const PLAYER_HUNT_RANGE = 150;
@@ -53,7 +53,7 @@ const REFORM_DURATION = 120;
 const ORB_COLLECTION_LEEWAY = 10; 
 const AIM_ASSIST_ANGLE = 0.1; 
 
-const TUNNEL_CHANCE_PER_TICK = 0.0005;
+const TUNNEL_CHANCE_PER_TICK = 0.001;
 const TUNNEL_DISTANCE = 400;
 const TUNNEL_DURATION_TICKS = 60; 
 
@@ -537,6 +537,12 @@ const App: React.FC = () => {
   const chapterUpgrades = useMemo(() => UPGRADES.filter((u: Upgrade) => u.chapter === gameState.currentChapter), [gameState.currentChapter]);
   const unlockedChapterUpgrades = useMemo(() => chapterUpgrades.filter((u: Upgrade) => gameState.unlockedUpgrades.has(u.id)).length, [chapterUpgrades, gameState.unlockedUpgrades]);
   const chapterProgress = useMemo(() => chapterUpgrades.length > 0 ? (unlockedChapterUpgrades / chapterUpgrades.length) * 100 : 0, [unlockedChapterUpgrades, chapterUpgrades.length]);
+  const actionHeat = useMemo(() => {
+    const orbHeat = Math.min(40, gameState.energyOrbs.length * 6);
+    const dangerHeat = Math.min(30, gameState.phages.length * 6 + gameState.cosmicEvents.length * 4);
+    const motionHeat = gameState.projection.playerState === 'PROJECTING' ? 20 : 0;
+    return Math.min(100, orbHeat + dangerHeat + motionHeat);
+  }, [gameState.energyOrbs.length, gameState.phages.length, gameState.cosmicEvents.length, gameState.projection.playerState]);
 
   if (!gameState.gameStarted) {
     return <SplashScreen onStartGame={startGame} onLoadGame={loadGame} dispatch={dispatch} settings={gameState.settings} />;
@@ -544,6 +550,13 @@ const App: React.FC = () => {
 
   return (
     <>
+      <div className="neo-grid"></div>
+      <div className="scanlines"></div>
+      <div className="corner-bracket top left"></div>
+      <div className="corner-bracket top right"></div>
+      <div className="corner-bracket bottom left"></div>
+      <div className="corner-bracket bottom right"></div>
+
       <div className={`app-container colorblind-${gameState.settings.colorblindMode} ${gameState.screenShake.duration > 0 ? 'screen-shake' : ''}`} style={{'--shake-intensity': `${gameState.screenShake.intensity}px`} as React.CSSProperties}>
         <BackgroundEffects gameState={gameState} dimensions={dimensions} />
         <KarmaParticles karma={gameState.karma} width={dimensions.width} height={dimensions.height} />
@@ -579,7 +592,7 @@ const App: React.FC = () => {
               {/* Center Info */}
               <div className="flex flex-col items-center glass-panel px-6 py-2 pointer-events-auto">
                   <div className="text-xs text-amber-300 uppercase tracking-widest mb-1 font-bold">{chapterInfo.name}</div>
-                  <div className="w-48 h-1 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="w-48 h-1 bg-slate-700 rounded-full overflow-hidden neo-bar">
                       <div className="h-full bg-gradient-to-r from-teal-400 via-sky-400 to-amber-300" style={{ width: `${chapterProgress}%` }}></div>
                   </div>
                   <div className="text-[10px] text-slate-300 mt-1">{chapterInfo.objective}</div>
@@ -588,6 +601,14 @@ const App: React.FC = () => {
                       <div className="absolute top-0 bottom-0 left-0 bg-red-500 w-1/2 opacity-30"></div>
                       <div className="absolute top-0 bottom-0 right-0 bg-emerald-400 w-1/2 opacity-30"></div>
                       <div className="absolute top-0 bottom-0 w-1 bg-white" style={{ left: karmaIndicatorPosition, transition: 'left 0.5s ease' }}></div>
+                  </div>
+                  <div className="mt-2 w-48">
+                      <div className="flex justify-between text-[10px] text-slate-400 uppercase tracking-widest">
+                          <span>Flow</span><span>{actionHeat}%</span>
+                      </div>
+                      <div className="h-1 bg-slate-900 rounded-full overflow-hidden neo-bar">
+                          <div className="h-full bg-gradient-to-r from-cyan-300 via-amber-300 to-emerald-300" style={{ width: `${actionHeat}%` }}></div>
+                      </div>
                   </div>
               </div>
 

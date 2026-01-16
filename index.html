@@ -97,6 +97,59 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 0 25px rgba(45, 212, 191, 0.06);
     }
 
+    /* Futuristic overlay grid and scanlines */
+    .neo-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56,189,248,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 2;
+      animation: grid-pan 24s linear infinite;
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.02) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      mix-blend-mode: soft-light;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 3;
+      animation: scan-flicker 8s ease-in-out infinite;
+    }
+
+    @keyframes grid-pan { from { background-position: 0 0, 0 0; } to { background-position: 120px 120px, 120px 120px; } }
+    @keyframes scan-flicker { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.3; } }
+
+    .corner-bracket {
+      position: fixed;
+      width: 48px;
+      height: 48px;
+      border: 2px solid rgba(56,189,248,0.5);
+      z-index: 4;
+      pointer-events: none;
+    }
+    .corner-bracket.top { top: 14px; }
+    .corner-bracket.bottom { bottom: 14px; }
+    .corner-bracket.left { left: 14px; border-right: none; border-bottom: none; }
+    .corner-bracket.right { right: 14px; border-left: none; border-top: none; }
+    .corner-bracket.bottom.left { border-top: none; border-right: none; }
+    .corner-bracket.bottom.right { border-top: none; border-left: none; }
+
+    .neo-bar {
+      box-shadow: 0 0 12px rgba(56,189,248,0.35);
+    }
+
     .neon-button {
       background: linear-gradient(135deg, rgba(45, 212, 191, 0.25), rgba(56, 189, 248, 0.15));
       border: 1px solid rgba(56, 189, 248, 0.35);

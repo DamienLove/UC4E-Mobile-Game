@@ -1,12 +1,31 @@
-// FIX: Replaced mock service with a real implementation using the @google/genai SDK.
-import { GoogleGenAI } from "@google/genai";
 import { GameNode, Chapter } from '../types';
 
+let ai: any = null;
+let initialized = false;
 
-const apiKey = typeof process !== 'undefined' ? (process.env.API_KEY as string | undefined) : undefined;
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// Safely initialize Gemini SDK only if API key is available
+const initializeGemini = async () => {
+  if (initialized) return;
+  initialized = true;
+  
+  try {
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      console.warn("VITE_API_KEY environment variable not set. Gemini features will be unavailable.");
+      return;
+    }
+    
+    // Dynamically import the SDK only when needed and key is available
+    const { GoogleGenAI } = await import("@google/genai");
+    ai = new GoogleGenAI({ apiKey });
+  } catch (error) {
+    console.warn("Failed to initialize Gemini SDK:", error);
+  }
+};
 
 export const getGeminiFlavorText = async (concept: string): Promise<string> => {
+    await initializeGemini();
+    
     if (!ai) {
         return `"${concept.replace(/_/g, ' ')} carries echoes across the void, waiting for your story."`;
     }
@@ -54,6 +73,8 @@ export const getGeminiFlavorText = async (concept: string): Promise<string> => {
 
 
 export const getGeminiLoreForNode = async (node: GameNode, chapter: Chapter): Promise<string> => {
+        await initializeGemini();
+        
         if (!ai) {
             return `The universe reflects on ${node.label}; its meaning will unfold as you progress.`;
         }
@@ -90,6 +111,8 @@ const MAX_RETRIES = 5;
 const INITIAL_BACKOFF_MS = 1000;
 
 export const generateNodeImage = async (prompt: string): Promise<string | null> => {
+        await initializeGemini();
+        
         if (!ai) return null; // Early return if AI is not available
     let retries = 0;
     while (retries < MAX_RETRIES) {

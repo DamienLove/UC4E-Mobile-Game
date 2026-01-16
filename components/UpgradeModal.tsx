@@ -43,7 +43,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, gameState,
   }
   
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 bg-black/50 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="glass-panel w-full max-w-5xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-purple-500/30 shadow-[0_0_50px_rgba(147,51,234,0.1)]">
         
         {/* Header */}

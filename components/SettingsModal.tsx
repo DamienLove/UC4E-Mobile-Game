@@ -25,7 +25,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
   };
 
   return (
-    <div className="modal-backdrop" onClick={handleBackdropClick}>
+    <div className="settings-modal-backdrop" onClick={handleBackdropClick}>
       <div className="glass-panel w-full max-w-lg p-8">
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>

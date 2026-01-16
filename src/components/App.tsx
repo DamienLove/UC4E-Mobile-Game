@@ -164,9 +164,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     // ... [Previous logic for TICK, UPGRADES, etc. remains identical, just compacting for brevity in this response] ...
     case 'TICK': {
       if (state.isPaused) return state;
-      let nextState = { ...state };
+      let nextState = { ...state, screenShake: { ...state.screenShake } };
       const { width, height, transform } = action.payload;
       const worldRadius = (Math.min(width, height) * 1.5) / (state.zoomLevel + 1);
+
+      if (nextState.screenShake.duration > 0) {
+        nextState.screenShake.duration -= 1;
+        if (nextState.screenShake.duration <= 0) {
+          nextState.screenShake.intensity = 0;
+        }
+      }
       
       let mutableNodes = nextState.nodes.map((n: GameNode) => ({...n}));
       let playerNode = mutableNodes.find((n: GameNode) => n.type === 'player_consciousness');
@@ -286,8 +293,104 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               nextState.notifications.push('A star shows signs of instability...');
           }
       }
-      // ... (Event spawning logic from previous code retained implicitly) ...
+      const randomPointInWorld = (radiusScale = 0.9) => {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * worldRadius * radiusScale;
+        return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+      };
+
+      if (!nextCosmicEvents.some(e => e.type === 'gravitational_anomaly') && Math.random() < 0.00035) {
+        const point = randomPointInWorld(0.7);
+        nextCosmicEvents.push({
+          id: `anomaly_${Date.now()}`,
+          type: 'gravitational_anomaly',
+          x: point.x,
+          y: point.y,
+          radius: 160,
+          duration: ANOMALY_DURATION_TICKS,
+          strength: ANOMALY_PULL_STRENGTH,
+        });
+        nextState.notifications.push('Space buckles into a gravitational anomaly.');
+      }
+
+      if (!nextCosmicEvents.some(e => e.type === 'resource_bloom') && Math.random() < 0.0004) {
+        const point = randomPointInWorld(0.8);
+        nextCosmicEvents.push({
+          id: `bloom_${Date.now()}`,
+          type: 'resource_bloom',
+          x: point.x,
+          y: point.y,
+          radius: 140,
+          duration: BLOOM_DURATION_TICKS,
+        });
+        nextState.notifications.push('A resource bloom erupts across the void.');
+      }
+
+      if (!nextCosmicEvents.some(e => e.type === 'black_hole') && Math.random() < BLACK_HOLE_SPAWN_CHANCE) {
+        const point = randomPointInWorld(0.6);
+        nextCosmicEvents.push({
+          id: `blackhole_${Date.now()}`,
+          type: 'black_hole',
+          x: point.x,
+          y: point.y,
+          radius: 60,
+          duration: BLACK_HOLE_DURATION_TICKS,
+          strength: BLACK_HOLE_PULL_STRENGTH,
+        });
+        nextState.notifications.push('A black hole opens, devouring nearby matter.');
+      }
+
+      if (!nextCosmicEvents.some(e => e.type === 'wave_of_harmony') && !nextCosmicEvents.some(e => e.type === 'wave_of_discord')) {
+        const waveChance = 0.00025;
+        if (Math.random() < waveChance) {
+          const isHarmony = nextState.karma >= 0;
+          nextCosmicEvents.push({
+            id: `wave_${Date.now()}`,
+            type: isHarmony ? 'wave_of_harmony' : 'wave_of_discord',
+            duration: 1800,
+          });
+          nextState.notifications.push(isHarmony ? 'A wave of harmony amplifies creation.' : 'A wave of discord fractures the flow.');
+        }
+      }
+
+      const updatedCosmicEvents: CosmicEvent[] = [];
+      for (const event of nextCosmicEvents) {
+        if (event.type === 'supernova' && event.phase === 'warning') {
+          const remaining = event.duration - 1;
+          if (remaining <= 0) {
+            updatedCosmicEvents.push({
+              ...event,
+              phase: 'active',
+              duration: SUPERNOVA_EXPLOSION_TICKS,
+            });
+            nextState.screenShake = { intensity: 12, duration: 30 };
+            audioService.playSound('milestone_achievement');
+          } else {
+            updatedCosmicEvents.push({ ...event, duration: remaining });
+          }
+          continue;
+        }
+        if (event.type === 'supernova' && event.phase === 'active') {
+          const remaining = event.duration - 1;
+          if (remaining <= 0) {
+            if (event.targetNodeId) nodesToRemove.add(event.targetNodeId);
+          } else {
+            updatedCosmicEvents.push({ ...event, duration: remaining });
+          }
+          continue;
+        }
+        const remaining = event.duration - 1;
+        if (remaining > 0) {
+          updatedCosmicEvents.push({ ...event, duration: remaining });
+        }
+      }
+      nextCosmicEvents = updatedCosmicEvents;
       
+      const activeAnomalies = nextCosmicEvents.filter((e: CosmicEvent) => e.type === 'gravitational_anomaly' && e.radius);
+      const activeBlooms = nextCosmicEvents.filter((e: CosmicEvent) => e.type === 'resource_bloom' && e.radius);
+      const activeBlackHoles = nextCosmicEvents.filter((e: CosmicEvent) => e.type === 'black_hole' && e.radius);
+      const activeSupernovas = nextCosmicEvents.filter((e: CosmicEvent) => e.type === 'supernova' && e.phase === 'active' && e.radius);
+
       // Node Physics
       mutableNodes.forEach((node: GameNode) => {
         if (node.type !== 'player_consciousness') {
@@ -303,6 +406,79 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 node.vy += (dy / dist) * force;
               }
             });
+        }
+
+        for (const anomaly of activeAnomalies) {
+          if (anomaly.x === undefined || anomaly.y === undefined || !anomaly.radius) continue;
+          const dx = anomaly.x - node.x;
+          const dy = anomaly.y - node.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 1 && dist < anomaly.radius) {
+            const pull = (anomaly.strength ?? ANOMALY_PULL_STRENGTH) * (1 - dist / anomaly.radius);
+            node.vx += (dx / dist) * pull;
+            node.vy += (dy / dist) * pull;
+            if (Math.random() < 0.15) {
+              nextState.anomalyParticles.push({
+                id: `particle_${Date.now()}_${Math.random()}`,
+                x: node.x,
+                y: node.y,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                life: 120,
+              });
+            }
+          }
+        }
+
+        for (const supernova of activeSupernovas) {
+          if (supernova.x === undefined || supernova.y === undefined || !supernova.radius) continue;
+          const dx = node.x - supernova.x;
+          const dy = node.y - supernova.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 1 && dist < supernova.radius) {
+            const push = (supernova.radius - dist) / supernova.radius;
+            node.vx += (dx / dist) * push * 1.2;
+            node.vy += (dy / dist) * push * 1.2;
+          }
+        }
+
+        for (const blackHole of activeBlackHoles) {
+          if (blackHole.x === undefined || blackHole.y === undefined || !blackHole.radius) continue;
+          const dx = blackHole.x - node.x;
+          const dy = blackHole.y - node.y;
+          const dist = Math.hypot(dx, dy);
+          const influenceRadius = blackHole.radius * 4;
+          if (dist > 1 && dist < influenceRadius) {
+            const pullStrength = (blackHole.strength ?? BLACK_HOLE_PULL_STRENGTH) * (1 - dist / influenceRadius);
+            node.vx += (dx / dist) * pullStrength * 0.01;
+            node.vy += (dy / dist) * pullStrength * 0.01;
+          }
+          if (dist < blackHole.radius * 0.6) {
+            if (node.type === 'player_consciousness') {
+              nextState.energy = Math.max(0, nextState.energy - 2);
+              nextState.knowledge = Math.max(0, nextState.knowledge - 1);
+              nextState.screenShake = { intensity: 8, duration: 20 };
+            } else {
+              nodesToRemove.add(node.id);
+            }
+          }
+        }
+
+        if (node.canTunnel) {
+          if (!node.tunnelingState && Math.random() < TUNNEL_CHANCE_PER_TICK) {
+            const target = randomPointInWorld(0.8);
+            node.tunnelingState = { phase: 'out', progress: 0, targetX: target.x, targetY: target.y };
+          }
+          if (node.tunnelingState) {
+            node.tunnelingState.progress += 1;
+            if (node.tunnelingState.phase === 'out' && node.tunnelingState.progress >= TUNNEL_DURATION_TICKS) {
+              node.x = node.tunnelingState.targetX;
+              node.y = node.tunnelingState.targetY;
+              node.tunnelingState = { ...node.tunnelingState, phase: 'in', progress: 0 };
+            } else if (node.tunnelingState.phase === 'in' && node.tunnelingState.progress >= TUNNEL_DURATION_TICKS) {
+              node.tunnelingState = null;
+            }
+          }
         }
         
         node.x += node.vx;
@@ -333,19 +509,157 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       });
 
+      if (nodesToRemove.size > 0) {
+        mutableNodes = mutableNodes.filter((node: GameNode) => node.type === 'player_consciousness' || !nodesToRemove.has(node.id));
+      }
+
+      for (const bloom of activeBlooms) {
+        if (bloom.x === undefined || bloom.y === undefined || !bloom.radius) continue;
+        if (Math.random() < 0.25) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * bloom.radius;
+          newEnergyOrbs.push({
+            id: `bloom_orb_${Date.now()}_${Math.random()}`,
+            x: bloom.x + Math.cos(angle) * dist,
+            y: bloom.y + Math.sin(angle) * dist,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() - 0.5) * 1.5,
+            radius: 5,
+            isFromBloom: true,
+          });
+        }
+      }
+
+      nextState.energyOrbs = nextState.energyOrbs
+        .map((orb: EnergyOrb) => {
+          const nextOrb = { ...orb };
+          nextOrb.x += nextOrb.vx;
+          nextOrb.y += nextOrb.vy;
+          nextOrb.vx *= 0.98;
+          nextOrb.vy *= 0.98;
+          const distFromCenter = Math.hypot(nextOrb.x, nextOrb.y);
+          if (distFromCenter > worldRadius) {
+            nextOrb.x *= 0.95;
+            nextOrb.y *= 0.95;
+            nextOrb.vx *= -0.5;
+            nextOrb.vy *= -0.5;
+          }
+          return nextOrb;
+        })
+        .filter((orb: EnergyOrb) => Math.hypot(orb.x, orb.y) < worldRadius * 1.2);
+
       if (playerNode) {
           nextState.energyOrbs = nextState.energyOrbs.filter((orb: EnergyOrb) => {
               const dx = playerNode.x - orb.x;
               const dy = playerNode.y - orb.y;
               const dist = Math.sqrt(dx * dx + dy * dy);
               if (dist < playerNode.radius + orb.radius + ORB_COLLECTION_LEEWAY) {
-                  nextState.energy += 10;
-                  audioService.playSound('collect_orb_standard');
+                  const energyGain = orb.isFromBloom ? 15 : 10;
+                  const knowledgeGain = orb.isFromBloom ? 4 : 0;
+                  nextState.energy += energyGain;
+                  nextState.knowledge += knowledgeGain;
+                  nextState.collectionEffects.push({
+                    id: `collect_${Date.now()}_${Math.random()}`,
+                    x: orb.x,
+                    y: orb.y,
+                    radius: 8,
+                    life: 20,
+                  });
+                  nextState.collectionBlooms.push({
+                    id: `bloom_${Date.now()}_${Math.random()}`,
+                    x: orb.x,
+                    y: orb.y,
+                    radius: 6,
+                    life: 24,
+                  });
+                  for (let i = 0; i < 6; i++) {
+                    nextState.collectionFlares.push({
+                      id: `flare_${Date.now()}_${Math.random()}`,
+                      x: orb.x,
+                      y: orb.y,
+                      life: 24,
+                      angle: i * 60 + Math.random() * 15,
+                    });
+                  }
+                  audioService.playSound(orb.isFromBloom ? 'collect_orb_good' : 'collect_orb_standard');
                   return false;
               }
               return true;
           });
       }
+
+      if (Math.random() < PHAGE_SPAWN_CHANCE) {
+        const spawnPoint = randomPointInWorld(0.95);
+        const potentialTargets = mutableNodes.filter((n: GameNode) => n.type !== 'player_consciousness');
+        const target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)] || playerNode;
+        if (target) {
+          nextState.phages = [
+            ...nextState.phages,
+            {
+              id: `phage_${Date.now()}_${Math.random()}`,
+              x: spawnPoint.x,
+              y: spawnPoint.y,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: (Math.random() - 0.5) * 1.5,
+              radius: 8,
+              targetNodeId: target.id,
+              state: 'seeking',
+            }
+          ];
+          audioService.playSound('phage_spawn');
+        }
+      }
+
+      const updatedPhages: QuantumPhage[] = [];
+      for (const phage of nextState.phages) {
+        const targetNode = mutableNodes.find((n: GameNode) => n.id === phage.targetNodeId) || playerNode;
+        if (!targetNode) continue;
+
+        const dx = targetNode.x - phage.x;
+        const dy = targetNode.y - phage.y;
+        const dist = Math.hypot(dx, dy);
+        const isDraining = dist < targetNode.radius + phage.radius + 8;
+        const nextPhage = { ...phage };
+
+        if (isDraining) {
+          if (nextPhage.state !== 'draining') {
+            audioService.playSound('phage_drain');
+          }
+          nextPhage.state = 'draining';
+          const drain = PHAGE_DRAIN_RATE;
+          if (targetNode.type === 'player_consciousness') {
+            nextState.energy = Math.max(0, nextState.energy - drain);
+            nextState.knowledge = Math.max(0, nextState.knowledge - drain * 0.4);
+          } else if (targetNode.type === 'star') {
+            nextState.energy = Math.max(0, nextState.energy - drain * 1.2);
+          } else if (targetNode.type === 'life_seed') {
+            nextState.biomass = Math.max(0, nextState.biomass - drain * 0.7);
+          } else if (targetNode.type === 'sentient_colony') {
+            nextState.unity = Math.max(0, nextState.unity - drain * 0.6);
+            nextState.knowledge = Math.max(0, nextState.knowledge - drain * 0.4);
+          } else {
+            nextState.complexity = Math.max(0, nextState.complexity - drain * 0.2);
+          }
+          nextPhage.vx *= 0.9;
+          nextPhage.vy *= 0.9;
+        } else {
+          nextPhage.state = 'seeking';
+          if (dist > 1) {
+            nextPhage.vx += (dx / dist) * PHAGE_ATTRACTION;
+            nextPhage.vy += (dy / dist) * PHAGE_ATTRACTION;
+          }
+        }
+
+        nextPhage.x += nextPhage.vx;
+        nextPhage.y += nextPhage.vy;
+        nextPhage.vx *= 0.98;
+        nextPhage.vy *= 0.98;
+
+        if (Math.hypot(nextPhage.x, nextPhage.y) < worldRadius * 1.2) {
+          updatedPhages.push(nextPhage);
+        }
+      }
+      nextState.phages = updatedPhages;
 
       nextState.projectileTrailParticles = nextState.projectileTrailParticles
         .map((p: { id: string; x: number; y: number; life: number; }) => ({ ...p, life: p.life - 1 }))
@@ -360,8 +674,33 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           });
       }
 
+      nextState.anomalyParticles = nextState.anomalyParticles
+        .map((p: AnomalyParticle) => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, life: p.life - 1 }))
+        .filter((p: AnomalyParticle) => p.life > 0);
+
+      nextState.collectionEffects = nextState.collectionEffects
+        .map((effect: CollectionEffect) => ({ ...effect, life: effect.life - 1 }))
+        .filter((effect: CollectionEffect) => effect.life > 0);
+
+      nextState.collectionBlooms = nextState.collectionBlooms
+        .map((bloom: { id: string; x: number; y: number; radius: number; life: number; }) => ({ ...bloom, life: bloom.life - 1 }))
+        .filter((bloom: { life: number; }) => bloom.life > 0);
+
+      nextState.collectionFlares = nextState.collectionFlares
+        .map((flare: { id: string; x: number; y: number; life: number; angle: number; }) => ({ ...flare, life: flare.life - 1 }))
+        .filter((flare: { life: number; }) => flare.life > 0);
+
       nextState.nodes = mutableNodes;
       nextState.energyOrbs = [...nextState.energyOrbs, ...newEnergyOrbs];
+      nextState.cosmicEvents = nextCosmicEvents;
+
+      if (!nextState.activeCrossroadsEvent) {
+        const crossroads = CROSSROADS_EVENTS.find((event) => event.trigger(nextState));
+        if (crossroads) {
+          nextState.activeCrossroadsEvent = crossroads;
+          nextState.isPaused = true;
+        }
+      }
       
       const currentChapter = CHAPTERS[nextState.currentChapter];
       if (currentChapter && nextState.currentChapter < CHAPTERS.length - 1) {
@@ -415,6 +754,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, loreState: { ...state.loreState, text: action.payload.text, isLoading: false } };
     case 'CLEAR_LORE':
       return { ...state, loreState: { nodeId: null, text: '', isLoading: false } };
+    case 'HUNT_PHAGE': {
+      const player = state.nodes.find((n: GameNode) => n.type === 'player_consciousness');
+      const phage = state.phages.find((p: QuantumPhage) => p.id === action.payload.phageId);
+      if (!player || !phage) return state;
+      const dist = Math.hypot(player.x - phage.x, player.y - phage.y);
+      if (dist > PLAYER_HUNT_RANGE) return state;
+      audioService.playSound('phage_capture');
+      return {
+        ...state,
+        energy: state.energy + 25,
+        karma: state.karma + 2,
+        phages: state.phages.filter((p: QuantumPhage) => p.id !== phage.id),
+        notifications: [...state.notifications, 'Quantum phage neutralized.'],
+      };
+    }
+    case 'CANCEL_CONNECTION_MODE':
+      return { ...state, connectMode: { active: false, sourceNodeId: null } };
+    case 'RESOLVE_CROSSROADS': {
+      const resolvedState = action.payload.choiceEffect(state);
+      return { ...resolvedState, activeCrossroadsEvent: null, isPaused: false };
+    }
     case 'SET_PAUSED':
       return { ...state, isPaused: action.payload };
     case 'START_AIMING':

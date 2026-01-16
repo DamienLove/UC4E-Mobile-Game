@@ -91,6 +91,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
     const dy = playerNode.y - p.y;
     return Math.sqrt(dx * dx + dy * dy) < PLAYER_HUNT_RANGE;
   }) : [];
+  const huntablePhageIds = new Set(huntablePhages.map((p: QuantumPhage) => p.id));
   
   const worldRadius = (Math.min(width, height) * 1.5) / (gameState.zoomLevel + 1);
 
@@ -371,12 +372,30 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         {gameState.energyOrbs.map((orb: EnergyOrb) => (
             <div
                 key={orb.id}
-                className={`energy-orb ${orb.isFromBloom ? 'bloom-orb' : ''}`}
+                className={`energy-orb ${orb.isFromBloom ? 'bloom' : ''}`}
                 style={{
                     left: `${orb.x}px`,
                     top: `${orb.y}px`,
                     width: `${orb.radius * 2}px`,
                     height: `${orb.radius * 2}px`,
+                }}
+            />
+        ))}
+
+        {/* Render Quantum Phages */}
+        {gameState.phages.map((phage: QuantumPhage) => (
+            <div
+                key={phage.id}
+                className={`quantum-phage ${huntablePhageIds.has(phage.id) ? 'huntable' : ''} ${phage.state === 'draining' ? 'draining' : ''}`}
+                style={{
+                    left: `${phage.x}px`,
+                    top: `${phage.y}px`,
+                    width: `${phage.radius * 2}px`,
+                    height: `${phage.radius * 2}px`,
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    dispatch({ type: 'HUNT_PHAGE', payload: { phageId: phage.id } });
                 }}
             />
         ))}
@@ -432,11 +451,11 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                 >
                  {node.imageUrl ? (
                     <div 
-                        className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''}`} 
+                        className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''} ${node.canTunnel ? 'can-tunnel' : ''}`} 
                         style={{ backgroundImage: `url(${node.imageUrl})`}}
                     />
                  ) : (
-                    <div className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''}`} />
+                    <div className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''} ${node.canTunnel ? 'can-tunnel' : ''}`} />
                  )}
                 </div>
             )

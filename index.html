@@ -497,6 +497,41 @@
         box-shadow: 0 0 15px #fefce8, 0 0 25px #fde047, 0 0 40px #fbbf24;
         transform: scale(1.1);
     }
+
+    .quantum-phage {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(251, 113, 133, 0.9), rgba(190, 18, 60, 0.9));
+        box-shadow: 0 0 12px rgba(248, 113, 113, 0.6), 0 0 22px rgba(244, 63, 94, 0.5);
+        margin-left: -50%;
+        margin-top: -50%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .quantum-phage::after {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        opacity: 0.6;
+    }
+
+    .quantum-phage.huntable {
+        box-shadow: 0 0 18px rgba(129, 230, 217, 0.8), 0 0 30px rgba(45, 212, 191, 0.7);
+        transform: scale(1.1);
+        animation: phage-pulse 1.5s ease-in-out infinite;
+    }
+
+    .quantum-phage.draining {
+        background: radial-gradient(circle, rgba(251, 191, 36, 0.9), rgba(244, 63, 94, 0.9));
+        box-shadow: 0 0 18px rgba(251, 191, 36, 0.7), 0 0 32px rgba(244, 63, 94, 0.6);
+    }
+
+    @keyframes phage-pulse {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.2); opacity: 1; }
+    }
     
     .connection-pulse {
         position: absolute;

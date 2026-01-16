@@ -9,6 +9,7 @@ interface TwinklingStar {
   maxOpacity: number;
   // For sine wave animation
   offset: number; 
+  layer: number; // 0, 1, 2 for parallax depth
 }
 
 // For meteors
@@ -30,16 +31,17 @@ interface QuantumParticle {
     maxLife: number;
 }
 
-const NUM_TWINKLING_STARS = 100;
-const NUM_QUANTUM_PARTICLES = 150;
-const METEOR_CHANCE_PER_FRAME = 0.005; // 0.5% chance each frame
+const NUM_TWINKLING_STARS = 250; // Increased for density
+const NUM_QUANTUM_PARTICLES = 200;
+const METEOR_CHANCE_PER_FRAME = 0.008; // Slightly more frequent
 
 const createTwinklingStar = (width: number, height: number): TwinklingStar => ({
   x: Math.random() * width,
   y: Math.random() * height,
-  size: Math.random() * 1.5 + 0.5,
-  maxOpacity: Math.random() * 0.5 + 0.2,
+  size: Math.random() * 1.5 + 0.2, // Varied sizes
+  maxOpacity: Math.random() * 0.7 + 0.3,
   offset: Math.random() * Math.PI * 2,
+  layer: Math.floor(Math.random() * 3)
 });
 
 const createMeteor = (width: number, height: number): Meteor => {
@@ -48,19 +50,19 @@ const createMeteor = (width: number, height: number): Meteor => {
     return {
         x: fromLeft ? -50 : width + 50,
         y: Math.random() * height,
-        vx: (fromLeft ? 1 : -1) * (Math.random() * 5 + 10), // Faster speed
-        vy: (Math.random() - 0.5) * 4,
-        len: Math.random() * 150 + 50,
-        life: 100, // frames until it fades
+        vx: (fromLeft ? 1 : -1) * (Math.random() * 8 + 15), // Faster speed
+        vy: (Math.random() - 0.5) * 5,
+        len: Math.random() * 150 + 100,
+        life: 80, // frames until it fades
     }
 };
 
 const createQuantumParticle = (width: number, height: number): QuantumParticle => {
-    const maxLife = Math.random() * 60 + 30; // 0.5 to 1.5 seconds
+    const maxLife = Math.random() * 60 + 40; 
     return {
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 1 + 0.5,
+        size: Math.random() * 1.2 + 0.5,
         life: maxLife,
         maxLife,
     }

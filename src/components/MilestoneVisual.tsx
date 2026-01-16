@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
+import { generateCosmicVideo } from '../services/geminiService';
+import { VIDEO_PROMPTS } from './constants';
 
 interface MilestoneVisualProps {
   milestoneId: string;
@@ -8,16 +11,17 @@ interface MilestoneVisualProps {
 
 const MILESTONE_DURATION: { [key: string]: number } = {
   default: 6000,
-  the_great_zoom_out: 14000, // A much longer, more cinematic duration
-  star_formation: 7000,
-  planetary_accretion: 7000,
-  quantum_computing: 7000,
-  quantum_tunneling: 7000,
+  the_great_zoom_out: 14000, 
+  star_formation: 8000,
+  planetary_accretion: 8000,
+  quantum_computing: 8000,
+  quantum_tunneling: 8000,
   basic_physics: 8000,
 };
 
+// Fallback visual content while video loads or if it fails
 const getVisuals = (imageUrl?: string): { [key: string]: React.ReactNode } => ({
-  // --- UPGRADE CINEMATICS ---
+  // --- UPGRADE CINEMATICS (CSS Fallbacks) ---
   basic_physics: (
     <div className="milestone-scene bg-black flex items-center justify-center">
       <div className="physics-container">
@@ -148,32 +152,85 @@ const getVisuals = (imageUrl?: string): { [key: string]: React.ReactNode } => ({
 });
 
 const MilestoneVisual: React.FC<MilestoneVisualProps> = ({ milestoneId, imageUrl, onComplete }) => {
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+
   const visuals = getVisuals(imageUrl);
   const visualContent = visuals[milestoneId];
   const duration = MILESTONE_DURATION[milestoneId] || MILESTONE_DURATION.default;
 
   useEffect(() => {
-    // If an unknown milestone ID is passed, complete immediately to avoid getting stuck.
+    // If unknown milestone ID, complete immediately.
     if (!visualContent) {
       onComplete();
       return;
     }
 
-    const timer = setTimeout(onComplete, duration);
-    return () => clearTimeout(timer);
-  }, [visualContent, onComplete, duration]);
+    // Try to generate a video if a prompt exists
+    const videoPrompt = VIDEO_PROMPTS[milestoneId];
+    if (videoPrompt) {
+        setIsGenerating(true);
+        generateCosmicVideo(videoPrompt, milestoneId)
+            .then(url => {
+                if (url) {
+                    setVideoUrl(url);
+                    setShowVideo(true);
+                }
+            })
+            .finally(() => {
+                setIsGenerating(false);
+            });
+    }
+
+    // If no video prompt, or as a failsafe timer if video takes too long (but here we want to wait for video if possible)
+    // We only auto-close if we are NOT showing a video.
+    // If we show a video, the onEnded event will handle close.
+    // BUT video generation takes long, so we show the CSS animation while waiting.
+    
+  }, [milestoneId, visualContent, onComplete]);
+
+  // If we're not generating video and haven't found one, rely on the timer.
+  useEffect(() => {
+      if (!isGenerating && !videoUrl && visualContent) {
+          const timer = setTimeout(onComplete, duration);
+          return () => clearTimeout(timer);
+      }
+  }, [isGenerating, videoUrl, onComplete, duration, visualContent]);
+
 
   if (!visualContent) {
     return null;
   }
 
   return (
-    <div className="milestone-container" style={{ animationDuration: `1s, 1s`, animationDelay: `0s, ${duration/1000 -1}s`}}>
+    <div className="milestone-container" style={{ animationDuration: `1s, 1s`, animationDelay: `0s, ${showVideo ? '999s' : duration/1000 -1}s`}}>
       <div className="milestone-explosion-flash" />
-      {visualContent}
-      <button className="milestone-skip-button" onClick={onComplete}>
-        Skip
-      </button>
+      
+      {showVideo && videoUrl ? (
+          <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-50 animate-fade-in-slow">
+              <video 
+                src={videoUrl} 
+                autoPlay 
+                className="w-full h-full object-contain"
+                onEnded={onComplete}
+              />
+              <button className="milestone-skip-button" onClick={onComplete}>Continue</button>
+          </div>
+      ) : (
+          <>
+            {visualContent}
+            {isGenerating && (
+                <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50">
+                    <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span className="text-white/70 text-sm tracking-widest uppercase animate-pulse">Dreaming Reality...</span>
+                </div>
+            )}
+            <button className="milestone-skip-button" onClick={onComplete}>
+                {isGenerating ? 'Skip Video' : 'Skip'}
+            </button>
+          </>
+      )}
     </div>
   );
 };

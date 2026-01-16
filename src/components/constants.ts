@@ -1,4 +1,3 @@
-
 import { Upgrade, Chapter, TutorialStep, CrossroadsEvent, GameState, GameNode, NodeType } from '../types';
 
 // Base64 encoded SVGs for node types
@@ -22,6 +21,19 @@ const getRandomImage = (nodeType: NodeType): string | undefined => {
     const images = NODE_IMAGE_MAP[nodeType];
     if (!images || images.length === 0) return undefined;
     return images[Math.floor(Math.random() * images.length)];
+};
+
+export const VIDEO_PROMPTS: Record<string, string> = {
+    basic_physics: "A conceptual visualization of the fundamental forces of the universe. Gravity, electromagnetism, strong and weak nuclear forces visualized as colored ribbons of light weaving together in a void. 8k, abstract, scientific.",
+    star_formation: "A photorealistic, high-resolution video of a star being born. A massive cloud of gas and dust collapses under gravity, spinning faster and heating up until it ignites in a blinding flash of nuclear fusion. Cinematic BBC documentary style.",
+    planetary_accretion: "A violent and epic scene of planetary formation. Massive asteroids and molten rocks smash into each other in a chaotic early solar system, forming a glowing, red-hot protoplanet. Debris flying, explosions, realistic lighting.",
+    spark_of_life: "A microscopic view of a primordial soup. Complex organic molecules float in dark, warm water. Suddenly, a self-replicating double helix of DNA forms and begins to glow with a soft blue light. The first spark of life. Macro photography, biological realism.",
+    panspermia: "A comet streaking through the darkness of space, its tail glowing blue. It impacts a barren, rocky planet. The impact site begins to spread green microbial life across the surface. Cinematic space view.",
+    eukaryotic_evolution: "A microscopic battle and union. Two single-celled organisms merge. Instead of one digesting the other, they form a symbiosis. The internal structure becomes complex, glowing with energy. The birth of the eukaryotic cell. Detailed biology animation.",
+    collective_intelligence: "A view of a planet from space at night. Individual lights on the surface begin to connect with beams of light, forming a complex, glowing web that covers the entire globe. A visual representation of a planetary consciousness awakening.",
+    quantum_computing: "A futuristic visualization of a quantum computer core. Gold and copper machinery cooled by liquid nitrogen mist. Qubits hover in a superposition state, flickering between 0 and 1 instantly. High-tech, sci-fi aesthetic.",
+    quantum_tunneling: "A particle approaching a barrier. Instead of bouncing off, it dissolves into a probability wave and instantly reappears on the other side. A visual demonstration of quantum tunneling physics. Abstract, neon visuals.",
+    the_great_zoom_out: "An epic continuous camera zoom out. Starting from a single atom, zooming out to a cell, then a planet, a star system, a galaxy, and finally the cosmic web of the entire universe. Mind-blowing scale."
 };
 
 export const UPGRADES: Upgrade[] = [
@@ -175,24 +187,6 @@ export const UPGRADES: Upgrade[] = [
         return { ...gs, karma: gs.karma + 20 };
     }
   },
-  {
-    id: 'cosmic_balance',
-    title: 'Cosmic Balance',
-    description: "Influence the universe's path towards harmony or chaos.",
-    cost: { knowledge: 500, biomass: 200 },
-    chapter: 3,
-    karmaRequirement: (k) => k < 0,
-    karmaRequirementText: 'Requires Chaotic Karma',
-    effect: (gs) => {
-      let newKarma = gs.karma;
-      if (gs.karma < 0) {
-        newKarma += 20;
-      } else if (gs.karma > 0) {
-        newKarma -= 20;
-      }
-      return { ...gs, karma: newKarma };
-    },
-  },
   // CHAPTER 4: Transcending Matter
   {
     id: 'quantum_computing',
@@ -276,8 +270,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     { text: "A directional line is now spinning around you. <strong class='text-cyan-400'>Click anywhere</strong> to set your trajectory.", highlight: '.simulation-container' },
     { text: "Now set your launch power. <strong class='text-cyan-400'>Click again</strong> when the meter reaches the desired strength.", highlight: '#power-meter-container' },
     { text: "You are now in motion. Collide with objects to interact. You will reform after coming to a stop.", highlight: '.simulation-container' },
-    { text: "Open the <strong class='text-purple-400'>Evolutionary Matrix</strong>. Use your energy and knowledge to unlock new possibilities.", highlight: '.action-button:first-of-type' },
-    { text: "Find and Unlock <strong class='text-gold-400'>Quantum Tunneling</strong> to transcend space itself.", highlight: '[data-tutorial-id="quantum_tunneling"]' },
+    { text: "Open the <strong class='text-purple-400'>Evolutionary Matrix</strong>. Your ultimate goal is to unlock <strong class='text-gold-400'>Quantum Tunneling</strong> to transcend space itself.", highlight: '.action-button:first-of-type' },
 ];
 
 export const CROSSROADS_EVENTS: CrossroadsEvent[] = [

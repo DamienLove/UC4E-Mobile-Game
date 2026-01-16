@@ -126,7 +126,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                   y1={node.y}
                   x2={target.x}
                   y2={target.y}
-                  stroke="rgba(100, 180, 255, 0.2)"
+                  stroke="rgba(100, 180, 255, 0.15)"
                   strokeWidth={2 / transform.scale}
                 />
               );
@@ -318,8 +318,8 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
 
         {/* Render Collection Effects */}
         {gameState.collectionEffects.map(effect => {
-            const progress = effect.life / 20.0; // Assuming initial life is 20
-            const currentRadius = effect.radius + (25 * (1 - progress)); // Expands by 25px
+            const progress = effect.life / 20.0;
+            const currentRadius = effect.radius + (25 * (1 - progress));
             const opacity = progress;
             return (
                 <div
@@ -337,8 +337,8 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         })}
         {/* Render Collection Blooms */}
         {gameState.collectionBlooms.map(bloom => {
-            const progress = 1 - (bloom.life / 24.0); // 0 to 1
-            const opacity = Math.sin(progress * Math.PI); // Fades in and out
+            const progress = 1 - (bloom.life / 24.0);
+            const opacity = Math.sin(progress * Math.PI);
             const scale = 1 + progress * 2;
             return (
                 <div
@@ -388,7 +388,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             />
         ))}
 
-        {/* Render Game Nodes */}
+        {/* Render Game Nodes - Updated structure for AAA visual effects */}
         {gameState.nodes.map(node => {
             const isPlayer = node.type === 'player_consciousness';
             const blackHoles = gameState.cosmicEvents.filter(e => e.type === 'black_hole');
@@ -438,14 +438,17 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                         cursor: isPlayer ? 'pointer' : 'pointer',
                     } as React.CSSProperties}
                 >
+                 {/* Visual Layers for "AAA" look */}
+                 <div className="node-atmosphere"></div>
                  {node.imageUrl ? (
                     <div 
-                        className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''}`} 
+                        className="node-surface" 
                         style={{ backgroundImage: `url(${node.imageUrl})`}}
                     />
                  ) : (
-                    <div className={`node-image ${node.type} ${node.hasLife ? 'hasLife' : ''}`} />
+                    <div className={`node-surface ${node.type} ${node.hasLife ? 'hasLife' : ''}`} />
                  )}
+                 <div className="node-shadow"></div>
                 </div>
             )
         })}

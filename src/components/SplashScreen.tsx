@@ -5,6 +5,7 @@ import SettingsModal from './SettingsModal';
 import CreditsModal from './CreditsModal';
 import AudioUploadModal from './AudioUploadModal';
 import { audioService } from '../services/AudioService';
+import { generateCosmicVideo } from '../services/geminiService';
 
 interface SplashScreenProps {
   onStartGame: () => void;
@@ -19,6 +20,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
   const [modal, setModal] = useState<'options' | 'credits' | 'audio' | null>(null);
   const [hasSaveGame, setHasSaveGame] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [introVideoUrl, setIntroVideoUrl] = useState<string | null>(null);
+  const [isGeneratingIntro, setIsGeneratingIntro] = useState(false);
 
 
   useEffect(() => {
@@ -39,6 +42,18 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
   const handleLoadGameWithMusic = () => {
       audioService.stopThemeMusic();
       onLoadGame();
+  };
+
+  const handlePlayIntro = async () => {
+      if (introVideoUrl) return; // Already loaded or playing
+      setIsGeneratingIntro(true);
+      const prompt = "A cinematic, photorealistic timelapse of the universe beginning. The Big Bang explosion of white light, cooling into swirling nebula colors of purple and gold, forming the first bright stars and galaxies. Epic, 8k resolution, BBC documentary style.";
+      const url = await generateCosmicVideo(prompt, "intro_cinematic");
+      setIsGeneratingIntro(false);
+      if (url) {
+          setIntroVideoUrl(url);
+          audioService.stopThemeMusic(); // Stop music so video audio can play (if any, though usually silent)
+      }
   };
 
   return (
@@ -87,19 +102,28 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
                 Load Game
               </button>
               <button
-                style={{ animationDelay: '1.4s' }}
-                onClick={() => setModal('options')}
-                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
+                style={{ animationDelay: '1.3s' }}
+                onClick={handlePlayIntro}
+                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item border-amber-500/50 text-amber-200"
               >
-                Options
+                Cinematic Intro
               </button>
-              <button
-               style={{ animationDelay: '1.6s' }}
-                onClick={() => setModal('credits')}
-                className="w-full text-lg md:text-xl font-bold py-4 px-8 rounded-lg neon-button splash-menu-item"
-              >
-                Credits
-              </button>
+              <div className="flex gap-2">
+                  <button
+                    style={{ animationDelay: '1.4s' }}
+                    onClick={() => setModal('options')}
+                    className="flex-1 text-md font-bold py-4 px-4 rounded-lg neon-button splash-menu-item"
+                  >
+                    Options
+                  </button>
+                  <button
+                   style={{ animationDelay: '1.6s' }}
+                    onClick={() => setModal('credits')}
+                    className="flex-1 text-md font-bold py-4 px-4 rounded-lg neon-button splash-menu-item"
+                  >
+                    Credits
+                  </button>
+              </div>
           </div>
       </div>
       
@@ -112,6 +136,36 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
             // DEV_ACCESS
           </button>
       </div>
+      
+      {/* Intro Video Overlay */}
+      {(isGeneratingIntro || introVideoUrl) && (
+          <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
+              {isGeneratingIntro && (
+                  <div className="text-center">
+                      <div className="w-16 h-16 border-4 border-t-amber-500 border-white/20 rounded-full animate-spin mb-4 mx-auto"></div>
+                      <h2 className="text-2xl text-amber-300 font-bold glow-text animate-pulse">Dreaming Reality...</h2>
+                      <p className="text-white/50 text-sm mt-2">Generating 720p Cinematic (This may take a moment)</p>
+                  </div>
+              )}
+              {introVideoUrl && (
+                  <div className="relative w-full h-full bg-black">
+                      <video 
+                        src={introVideoUrl} 
+                        className="w-full h-full object-contain" 
+                        autoPlay 
+                        controls
+                        onEnded={() => { setIntroVideoUrl(null); audioService.playThemeMusic(); }}
+                      />
+                      <button 
+                        onClick={() => { setIntroVideoUrl(null); audioService.playThemeMusic(); }}
+                        className="absolute top-8 right-8 text-white/50 hover:text-white text-xl border border-white/20 px-4 py-2 rounded bg-black/50 backdrop-blur"
+                      >
+                        Close X
+                      </button>
+                  </div>
+              )}
+          </div>
+      )}
       
       {modal === 'options' && <SettingsModal settings={settings} dispatch={dispatch} onClose={() => setModal(null)} />}
       {modal === 'credits' && <CreditsModal onClose={() => setModal(null)} />}

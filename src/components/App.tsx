@@ -598,6 +598,24 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
+  // Keyboard Shortcut Handler
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key.toLowerCase() === 'u') {
+              if (isUpgradeModalOpen) {
+                  setUpgradeModalOpen(false);
+                  audioService.playSound('ui_click');
+              } else {
+                  setUpgradeModalOpen(true);
+                  audioService.playSound('ui_open');
+              }
+          }
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isUpgradeModalOpen]);
+  
   useEffect(() => {
     if (gameState.energy > prevResources.current.energy) {
         setEnergyPulse(true);
@@ -638,41 +656,12 @@ const App: React.FC = () => {
   const unlockedChapterUpgrades = useMemo(() => chapterUpgrades.filter(u => gameState.unlockedUpgrades.has(u.id)).length, [chapterUpgrades, gameState.unlockedUpgrades]);
   const chapterProgress = useMemo(() => chapterUpgrades.length > 0 ? (unlockedChapterUpgrades / chapterUpgrades.length) * 100 : 0, [unlockedChapterUpgrades, chapterUpgrades.length]);
 
-  // Calculate Resource Rates
-  const rates = useMemo(() => {
-      let energy = 0;
-      let knowledge = BASE_KNOWLEDGE_RATE;
-      let biomass = 0;
-      let unity = 0;
-
-      let harmonyBonus = 1.0;
-      let chaosPenalty = 1.0;
-      if (gameState.karma > HARMONY_THRESHOLD) harmonyBonus = 1.25; 
-      if (gameState.karma < CHAOS_THRESHOLD) chaosPenalty = 0.75; 
-      if (gameState.cosmicEvents.some(e => e.type === 'wave_of_harmony')) harmonyBonus *= 1.5; 
-      if (gameState.cosmicEvents.some(e => e.type === 'wave_of_discord')) chaosPenalty *= 0.5; 
-
-      gameState.nodes.forEach(n => {
-          if (n.type === 'star') energy += STAR_ENERGY_RATE;
-          if (n.hasLife) biomass += LIFE_BIOMASS_RATE * harmonyBonus;
-      });
-
-      if (gameState.unlockedUpgrades.has('cellular_specialization')) {
-          const lifeCount = gameState.nodes.filter(n => n.hasLife).length;
-          biomass += lifeCount * 0.5 * harmonyBonus;
-      }
-
-      if (gameState.unlockedUpgrades.has('collective_intelligence')) {
-          unity += COLLECTIVE_UNITY_RATE * harmonyBonus * chaosPenalty;
-      }
-
-      return { energy, knowledge, biomass, unity };
-  }, [gameState.nodes, gameState.unlockedUpgrades, gameState.karma, gameState.cosmicEvents]);
-
-
   if (!gameState.gameStarted) {
     return <SplashScreen onStartGame={startGame} onLoadGame={loadGame} dispatch={dispatch} settings={gameState.settings} />;
   }
+
+  // Helper to hide HUD when modals are open to prevent overlap and z-index confusion
+  const isModalOpen = isUpgradeModalOpen || isSettingsModalOpen || gameState.activeMilestone || gameState.activeCrossroadsEvent;
 
   return (
     <>
@@ -691,115 +680,116 @@ const App: React.FC = () => {
         />
       </div>
       
-      {/* --- NEW HUD LAYOUT --- */}
-      <div className="hud-container absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-4">
-          
-          {/* TOP BAR: Resources & Status */}
-          <div className="flex justify-between items-start">
-              {/* Resources */}
-              <div className="flex flex-col gap-2 pointer-events-auto">
-                  <div className={`hud-resource-pill text-yellow-300 glass-panel ${energyPulse ? 'animate-pulse' : ''}`}>
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M11.23 13.06l-1.33 4.14a.5.5 0 01-.94 0l-1.33-4.14-.85.35a.5.5 0 01-.59-.64L7.5 7.5H4.5a.5.5 0 01-.4-.8l6-5.5a.5.5 0 01.8 0l6 5.5a.5.5 0 01-.4.8H13.5L12.18 12.77l-.95.29z"/></svg>
-                      <span className="font-mono font-bold">{Math.floor(gameState.energy).toLocaleString()}</span>
-                      <span className="text-xs text-yellow-500/80 ml-1">+{rates.energy.toFixed(1)}/t</span>
-                  </div>
-                  <div className={`hud-resource-pill text-purple-300 glass-panel ${knowledgePulse ? 'animate-pulse' : ''}`}>
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5.13 5.13a6 6 0 018.48 0L10 10 5.13 5.13zM10 18a6 6 0 01-4.24-1.76l4.24-4.24 4.24 4.24A6 6 0 0110 18z"/></svg>
-                      <span className="font-mono font-bold">{Math.floor(gameState.knowledge).toLocaleString()}</span>
-                      <span className="text-xs text-purple-500/80 ml-1">+{rates.knowledge.toFixed(1)}/t</span>
-                  </div>
-                  {(gameState.biomass > 0 || rates.biomass > 0) && (
-                    <div className="hud-resource-pill text-green-300 glass-panel">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                        <span className="font-mono font-bold">{Math.floor(gameState.biomass).toLocaleString()}</span>
-                        <span className="text-xs text-green-500/80 ml-1">+{rates.biomass.toFixed(1)}/t</span>
+      {/* --- HUD DASHBOARD LAYOUT --- */}
+      {/* Fixed bottom dashboard containing all main game controls and info */}
+      {!isModalOpen && (
+      <>
+        {/* Floating Notifications (Top Right) */}
+        <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2 pointer-events-none">
+            {gameState.notifications.map((msg, index) => (
+                <div key={`${msg}-${index}`} className="pointer-events-auto">
+                    <Notification message={msg} onDismiss={() => dispatch({ type: 'DISMISS_NOTIFICATION', payload: { index } })} />
+                </div>
+            ))}
+        </div>
+
+        {/* Bottom Dashboard */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex flex-col justify-end">
+            
+            {/* Zoom Controls Floating above Dashboard */}
+            <div className="w-full flex justify-end px-4 pb-2 pointer-events-none">
+                <div className="pointer-events-auto flex flex-col gap-2">
+                    <button onClick={() => zoom(1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl shadow-lg bg-black/60 border-cyan-800">+</button>
+                    <button onClick={() => zoom(1/1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl shadow-lg bg-black/60 border-cyan-800">-</button>
+                </div>
+            </div>
+
+            {/* Main Dashboard Panel */}
+            <div className="bg-slate-950/90 backdrop-blur-md border-t border-cyan-900/50 p-3 pb-safe pointer-events-auto shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
+                {/* Chapter Progress Bar (Top of Dash) */}
+                <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden mb-3 relative">
+                    <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-500" style={{ width: `${chapterProgress}%` }}></div>
+                </div>
+
+                <div className="max-w-7xl mx-auto grid grid-cols-12 gap-2 md:gap-4 items-end">
+                    
+                    {/* LEFT: Resources */}
+                    <div className="col-span-4 md:col-span-3 flex flex-col gap-2">
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded bg-yellow-900/20 border border-yellow-700/30 ${energyPulse ? 'animate-pulse bg-yellow-900/40' : ''}`}>
+                            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11.23 13.06l-1.33 4.14a.5.5 0 01-.94 0l-1.33-4.14-.85.35a.5.5 0 01-.59-.64L7.5 7.5H4.5a.5.5 0 01-.4-.8l6-5.5a.5.5 0 01.8 0l6 5.5a.5.5 0 01-.4.8H13.5L12.18 12.77l-.95.29z"/></svg>
+                            <span className="font-mono font-bold text-yellow-200 text-lg">{Math.floor(gameState.energy).toLocaleString()}</span>
+                        </div>
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded bg-purple-900/20 border border-purple-700/30 ${knowledgePulse ? 'animate-pulse bg-purple-900/40' : ''}`}>
+                            <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5.13 5.13a6 6 0 018.48 0L10 10 5.13 5.13zM10 18a6 6 0 01-4.24-1.76l4.24-4.24 4.24 4.24A6 6 0 0110 18z"/></svg>
+                            <span className="font-mono font-bold text-purple-200 text-lg">{Math.floor(gameState.knowledge).toLocaleString()}</span>
+                        </div>
                     </div>
-                  )}
-                  {(gameState.unity > 0 || rates.unity > 0) && (
-                    <div className="hud-resource-pill text-indigo-300 glass-panel">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                        <span className="font-mono font-bold">{Math.floor(gameState.unity).toLocaleString()}</span>
-                        <span className="text-xs text-indigo-500/80 ml-1">+{rates.unity.toFixed(1)}/t</span>
+
+                    {/* CENTER: Info & Karma */}
+                    <div className="col-span-4 md:col-span-6 flex flex-col items-center justify-end text-center">
+                        <div className="text-xs text-cyan-500 uppercase tracking-widest font-bold mb-1 hidden sm:block">{chapterInfo.name}</div>
+                        <div className="text-[10px] text-gray-400 truncate max-w-full hidden md:block mb-2">{chapterInfo.objective}</div>
+                        
+                        {/* Karma Bar */}
+                        <div className="w-full max-w-[200px] h-1.5 bg-gray-800 rounded-full relative overflow-hidden mb-1">
+                            <div className="absolute top-0 bottom-0 left-0 bg-red-500 w-1/2 opacity-40"></div>
+                            <div className="absolute top-0 bottom-0 right-0 bg-cyan-500 w-1/2 opacity-40"></div>
+                            <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_5px_white]" style={{ left: karmaIndicatorPosition, transition: 'left 0.5s ease' }}></div>
+                        </div>
+                        <div className="flex justify-between w-full max-w-[200px] text-[8px] text-gray-500 uppercase font-mono">
+                            <span>Chaos</span>
+                            <span>Harmony</span>
+                        </div>
                     </div>
-                  )}
-              </div>
 
-              {/* Center Info */}
-              <div className="flex flex-col items-center glass-panel px-6 py-2 pointer-events-auto">
-                  <div className="text-xs text-cyan-400 uppercase tracking-widest mb-1 font-bold">{chapterInfo.name}</div>
-                  <div className="w-48 h-1 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500" style={{ width: `${chapterProgress}%` }}></div>
-                  </div>
-                  <div className="text-[10px] text-gray-400 mt-1">{chapterInfo.objective}</div>
-                  {/* Karma Bar */}
-                  <div className="w-48 h-1 mt-2 bg-gray-800 rounded-full relative overflow-hidden">
-                      <div className="absolute top-0 bottom-0 left-0 bg-red-500 w-1/2 opacity-30"></div>
-                      <div className="absolute top-0 bottom-0 right-0 bg-cyan-500 w-1/2 opacity-30"></div>
-                      <div className="absolute top-0 bottom-0 w-1 bg-white" style={{ left: karmaIndicatorPosition, transition: 'left 0.5s ease' }}></div>
-                  </div>
-              </div>
+                    {/* RIGHT: Actions */}
+                    <div className="col-span-4 md:col-span-3 flex justify-end items-end gap-2">
+                        {/* Inventory Slots (Small) */}
+                        <div className="hidden sm:flex gap-1 mr-2">
+                             {gameState.inventory.map(item => (
+                                <button
+                                key={item.id}
+                                className="w-10 h-10 rounded bg-gray-800 border border-gray-700 flex items-center justify-center hover:border-cyan-400 transition-colors"
+                                onClick={() => dispatch({ type: 'USE_ITEM', payload: { itemId: item.id }})}
+                                title={item.name}
+                                >
+                                    <div className={`w-6 h-6 icon-${item.icon} bg-cover opacity-80`}></div>
+                                </button>
+                            ))}
+                        </div>
 
-              {/* Menu & Notifs */}
-              <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                  <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full glass-panel hover:bg-white/10 transition-colors">
-                      <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                  </button>
-                  {gameState.notifications.map((msg, index) => (
-                    <Notification key={`${msg}-${index}`} message={msg} onDismiss={() => dispatch({ type: 'DISMISS_NOTIFICATION', payload: { index } })} />
-                  ))}
-              </div>
-          </div>
-
-          {/* BOTTOM DOCK: Actions */}
-          <div className="flex justify-between items-end">
-              {/* Inventory */}
-              <div className="flex gap-2 pointer-events-auto">
-                  {gameState.inventory.map(item => (
-                    <button
-                      key={item.id}
-                      className="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center hover:border-cyan-400 transition-colors shadow-lg"
-                      onClick={() => dispatch({ type: 'USE_ITEM', payload: { itemId: item.id }})}
-                      title={item.name}
-                    >
-                        <div className={`w-8 h-8 icon-${item.icon} bg-cover opacity-80`}></div>
-                    </button>
-                  ))}
-              </div>
-
-              {/* Main Controls */}
-              <div className="flex items-center gap-4 pointer-events-auto">
-                  <div className="flex flex-col gap-2">
-                      <button onClick={() => zoom(1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">+</button>
-                      <button onClick={() => zoom(1/1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">-</button>
-                  </div>
-                  
-                  <button 
-                    onClick={() => {
-                        setUpgradeModalOpen(true);
-                        // Advance tutorial if on step 4 (the "Open Evolutionary Matrix" step)
-                        if (gameState.tutorialStep === 4) {
-                            dispatch({ type: 'ADVANCE_TUTORIAL' });
-                        }
-                    }} 
-                    className="action-button primary neon-button w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(188,19,254,0.3)] border-purple-500"
-                  >
-                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                  </button>
-              </div>
-          </div>
-      </div>
+                        <button onClick={() => setSettingsModalOpen(true)} className="w-12 h-12 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 flex items-center justify-center text-gray-300 transition-colors">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setUpgradeModalOpen(true)} 
+                            className="h-12 px-4 rounded-lg bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 border border-purple-500 text-white font-bold tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center"
+                        >
+                            <svg className="w-6 h-6 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                            <span className="hidden sm:inline">MATRIX</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </>
+      )}
       
       {gameState.isPaused && (
           <div className="pause-overlay">
             <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500 tracking-widest mb-8 font-['Orbitron']">PAUSED</h1>
-            <button onClick={() => dispatch({type: 'SET_PAUSED', payload: false})} className="neon-button h-12 w-48 rounded-lg">RESUME</button>
+            <button onClick={() => dispatch({type: 'SET_PAUSED', payload: false})} className="neon-button h-12 w-48 rounded-lg pointer-events-auto">RESUME</button>
           </div>
       )}
       
       <NodeInspector gameState={gameState} dispatch={dispatch} />
       
+      {/* Modals and Overlays - No relative wrappers, direct fixed positioning to ensure stacking context works */}
       {isUpgradeModalOpen && <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} gameState={gameState} onPurchase={(upgrade, imageUrl) => dispatch({type: 'PURCHASE_UPGRADE', payload: {upgrade, imageUrl}})} />}
+      
       {isSettingsModalOpen && <SettingsModal settings={gameState.settings} dispatch={dispatch} onClose={() => setSettingsModalOpen(false)} />}
+      
       {gameState.tutorialStep !== -1 && <Tutorial step={gameState.tutorialStep} dispatch={dispatch} />}
       {gameState.activeMilestone && <MilestoneVisual milestoneId={gameState.activeMilestone.id} imageUrl={gameState.activeMilestone.imageUrl} onComplete={() => dispatch({type: 'MILESTONE_COMPLETE'})} />}
       {gameState.activeCrossroadsEvent && <CrossroadsModal event={gameState.activeCrossroadsEvent} dispatch={dispatch} />}

@@ -8,8 +8,44 @@ import { GameNode, Chapter } from '../types';
 // The API key MUST be obtained exclusively from the environment variable `process.env.API_KEY`.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-// In-memory cache for video URLs to prevent re-generation during the same session
-const videoCache = new Map<string, string>();
+// Simple LRU Cache implementation
+class SimpleLRUCache<K, V> {
+  private capacity: number;
+  private cache: Map<K, V>;
+
+  constructor(capacity: number) {
+    this.capacity = capacity;
+    this.cache = new Map<K, V>();
+  }
+
+  get(key: K): V | undefined {
+    if (!this.cache.has(key)) return undefined;
+    const value = this.cache.get(key)!;
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.capacity) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
+    }
+    this.cache.set(key, value);
+  }
+
+  has(key: K): boolean {
+    return this.cache.has(key);
+  }
+}
+
+// In-memory cache for video URLs to prevent re-generation during the same session.
+// Limited to 50 items to prevent unbounded memory growth.
+const videoCache = new SimpleLRUCache<string, string>(50);
 
 export const getGeminiFlavorText = async (concept: string): Promise<string> => {
   try {

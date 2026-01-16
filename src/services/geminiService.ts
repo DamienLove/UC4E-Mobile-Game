@@ -3,26 +3,28 @@ import { GoogleGenAI } from "@google/genai";
 import { GameNode, Chapter } from '../types';
 
 
-// Always use new GoogleGenAI({apiKey: process.env.API_KEY});
-// The API key MUST be obtained exclusively from the environment variable `process.env.API_KEY`.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const apiKey = typeof process !== 'undefined' ? (process.env.API_KEY as string | undefined) : undefined;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const getGeminiFlavorText = async (concept: string): Promise<string> => {
+    if (!ai) {
+        return `"${concept.replace(/_/g, ' ')} carries echoes across the void, waiting for your story."`;
+    }
   try {
     const prompt = `Create a short, poetic, and evocative flavor text for a concept in a cosmic evolution game. The concept is "${concept.replace(/_/g, ' ')}". The text should be a single sentence, enclosed in double quotes, and feel profound, like a line from a science fiction novel. For example, for "panspermia", you might write: "Life is a traveler. It journeys across the void on ships of ice and rock, seeking fertile ground to continue its endless story."`;
 
-    // Use ai.models.generateContent to query the model.
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Use the recommended model for general text tasks.
-      contents: prompt,
-      config: {
-        // A system instruction to guide the model's tone and style.
-        systemInstruction: "You are a creative writer for a video game, specializing in cryptic and beautiful flavor text.",
-        temperature: 0.8,
-        topP: 0.9,
-        maxOutputTokens: 60, // Flavor text should be concise.
-      },
-    });
+        // Use ai.models.generateContent to query the model.
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash', // Use the recommended model for general text tasks.
+            contents: prompt,
+            config: {
+                // A system instruction to guide the model's tone and style.
+                systemInstruction: "You are a creative writer for a video game, specializing in cryptic and beautiful flavor text.",
+                temperature: 0.8,
+                topP: 0.9,
+                maxOutputTokens: 60, // Flavor text should be concise.
+            },
+        });
 
     // Safely access the text property to prevent runtime errors.
     const flavorText = response.text;
@@ -52,39 +54,43 @@ export const getGeminiFlavorText = async (concept: string): Promise<string> => {
 
 
 export const getGeminiLoreForNode = async (node: GameNode, chapter: Chapter): Promise<string> => {
-    try {
-        const nodeDescription = `${node.label} (${node.type.replace(/_/g, ' ')})`;
-        const prompt = `You are the Universal Consciousness from Damien Nichols' book 'Universe Connected for Everyone'. A player is observing a cosmic entity: ${nodeDescription}. The universe is currently in the narrative chapter titled "${chapter.name}". Provide a short, profound, and slightly cryptic observation about this entity in the context of this chapter's themes. The response should be one or two sentences and not enclosed in quotes.`;
+        if (!ai) {
+            return `The universe reflects on ${node.label}; its meaning will unfold as you progress.`;
+        }
+        try {
+            const nodeDescription = `${node.label} (${node.type.replace(/_/g, ' ')})`;
+            const prompt = `You are the Universal Consciousness from Damien Nichols' book 'Universe Connected for Everyone'. A player is observing a cosmic entity: ${nodeDescription}. The universe is currently in the narrative chapter titled "${chapter.name}". Provide a short, profound, and slightly cryptic observation about this entity in the context of this chapter's themes. The response should be one or two sentences and not enclosed in quotes.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                systemInstruction: "You are the narrator of a profound cosmic simulation game, speaking with wisdom and a touch of mystery.",
-                temperature: 0.9,
-                topP: 0.95,
-                maxOutputTokens: 80,
-            }
-        });
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    systemInstruction: "You are the narrator of a profound cosmic simulation game, speaking with wisdom and a touch of mystery.",
+                    temperature: 0.9,
+                    topP: 0.95,
+                    maxOutputTokens: 80,
+                }
+            });
         
-        const loreText = response.text;
-        if (!loreText) {
-            console.warn(`Gemini API returned no lore for node "${node.label}".`, response);
+            const loreText = response.text;
+            if (!loreText) {
+                console.warn(`Gemini API returned no lore for node "${node.label}".`, response);
+                return "The connection is weak... The future is clouded.";
+            }
+
+            return loreText.trim();
+
+        } catch (error) {
+            console.error(`Error fetching lore for "${node.label}":`, error);
             return "The connection is weak... The future is clouded.";
         }
-
-        return loreText.trim();
-
-    } catch (error) {
-        console.error(`Error fetching lore for "${node.label}":`, error);
-        return "The connection is weak... The future is clouded.";
-    }
-};
+    };
 
 const MAX_RETRIES = 5;
 const INITIAL_BACKOFF_MS = 1000;
 
 export const generateNodeImage = async (prompt: string): Promise<string | null> => {
+        if (!ai) return null; // Early return if AI is not available
     let retries = 0;
     while (retries < MAX_RETRIES) {
         try {

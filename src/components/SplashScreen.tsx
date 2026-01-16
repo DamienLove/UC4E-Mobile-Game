@@ -41,17 +41,19 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900 via-gray-900 to-black"></div>
+      <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black"></div>
       <div className="absolute inset-0 particle-container">
         {Array.from({ length: 50 }).map((_, i) => (
           <div key={i} className="particle" style={{
-            '--tx': `${Math.random() * 200 - 100}px`,
-            '--ty': `${Math.random() * 200 - 100}px`,
+            '--x-start': `${Math.random() * 200 - 100}px`,
+            '--y-start': `${Math.random() * 200 - 100}px`,
+            '--x-end': `${Math.random() * 200 - 100}px`,
+            '--y-end': `${Math.random() * 200 - 100}px`,
+            '--size': `${Math.random() * 2.5 + 1}px`,
+            '--duration': `${Math.random() * 10 + 12}s`,
+            '--delay': `${Math.random() * -10}s`,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            width: `${Math.random() * 3}px`,
-            height: `${Math.random() * 3}px`,
-            animationDuration: `${Math.random() * 10 + 10}s`
           } as React.CSSProperties} />
         ))}
       </div>
@@ -60,13 +62,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStartGame, onLoadGame, di
       <div className="relative z-10 w-full max-w-md px-6 flex flex-col items-center gap-10">
           
           <div className="text-center animate-float">
-              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-400 drop-shadow-[0_0_25px_rgba(0,243,255,0.4)] tracking-tighter mb-2 header-font">
+              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-cyan-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)] tracking-tighter mb-2 header-font">
                   UNIVERSE
               </h1>
-              <h2 className="text-3xl md:text-4xl font-light tracking-[0.5em] text-cyan-100/80 header-font">
+              <h2 className="text-3xl md:text-4xl font-light tracking-[0.5em] text-slate-200/80 header-font">
                   CONNECTED
               </h2>
-              <div className="h-1 w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mt-8"></div>
+              <div className="h-1 w-24 bg-gradient-to-r from-transparent via-amber-300 to-transparent mx-auto mt-8"></div>
           </div>
 
           <div className="w-full flex flex-col gap-4 mt-4">

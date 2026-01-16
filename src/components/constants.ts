@@ -259,7 +259,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     { text: "A directional line is now spinning around you. <strong class='text-cyan-400'>Click anywhere</strong> to set your trajectory.", highlight: '.simulation-container' },
     { text: "Now set your launch power. <strong class='text-cyan-400'>Click again</strong> when the meter reaches the desired strength.", highlight: '#power-meter-container' },
     { text: "You are now in motion. Collide with objects to interact. You will reform after coming to a stop.", highlight: '.simulation-container' },
-    { text: "Open the <strong class='text-purple-400'>Evolutionary Matrix</strong>. Your ultimate goal is to unlock <strong class='text-gold-400'>Quantum Tunneling</strong> to transcend space itself.", highlight: '.action-button:first-of-type' },
+    { text: "Open the <strong class='text-amber-300'>Evolutionary Matrix</strong>. Your ultimate goal is to unlock <strong class='text-emerald-300'>Quantum Tunneling</strong> to transcend space itself.", highlight: '.action-button:first-of-type' },
 ];
 
 export const CROSSROADS_EVENTS: CrossroadsEvent[] = [

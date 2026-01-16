@@ -28,7 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="glass-panel w-full max-w-lg p-8">
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>
+            <h2 className="text-2xl font-bold header-font text-amber-200">SYSTEM OPTIONS</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
         </div>
         
@@ -37,7 +37,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           <div className="grid grid-cols-2 gap-4 mb-8">
               <button 
                 onClick={handleSave}
-                className="col-span-2 neon-button h-12 rounded flex items-center justify-center gap-2 border-green-500/50 text-green-300 hover:bg-green-500/10"
+                className="col-span-2 neon-button h-12 rounded flex items-center justify-center gap-2 border-emerald-400/50 text-emerald-200 hover:bg-emerald-500/10"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                 SAVE SIMULATION
@@ -51,7 +51,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
               min="0"
               max="1"
               step="0.01"
-              className="w-full accent-cyan-500 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className="w-full accent-teal-400 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
               value={settings.sfxVolume}
               onChange={(e) => handleSettingChange('sfxVolume', parseFloat(e.target.value))}
             />
@@ -64,7 +64,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
               min="0"
               max="1"
               step="0.01"
-              className="w-full accent-cyan-500 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className="w-full accent-teal-400 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
               value={settings.musicVolume}
               onChange={(e) => handleSettingChange('musicVolume', parseFloat(e.target.value))}
             />
@@ -73,7 +73,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           <div>
             <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Visual Accessibility</label>
             <select
-              className="w-full p-2 bg-black/50 border border-gray-600 rounded text-white focus:border-cyan-500 outline-none"
+              className="w-full p-2 bg-black/50 border border-slate-600 rounded text-white focus:border-amber-300 outline-none"
               value={settings.colorblindMode}
               onChange={(e) => handleSettingChange('colorblindMode', e.target.value)}
             >
@@ -94,7 +94,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
                   checked={settings.aimAssist}
                   onChange={(e) => handleSettingChange('aimAssist', e.target.checked)}
                 />
-                <div className="w-14 h-8 bg-gray-700 rounded-full peer-checked:bg-cyan-600 transition-colors border border-gray-600"></div>
+                <div className="w-14 h-8 bg-slate-700 rounded-full peer-checked:bg-emerald-500 transition-colors border border-slate-600"></div>
                 <div className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 shadow-md"></div>
               </div>
             </label>

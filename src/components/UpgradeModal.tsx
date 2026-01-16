@@ -44,15 +44,15 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, gameState,
   
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="glass-panel w-full max-w-5xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-purple-500/30 shadow-[0_0_50px_rgba(147,51,234,0.1)]">
+      <div className="glass-panel w-full max-w-5xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-cyan-400/20 shadow-[0_0_50px_rgba(56,189,248,0.12)]">
         
         {/* Header */}
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
           <div>
-              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 header-font">
+              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-cyan-300 header-font">
                 EVOLUTIONARY MATRIX
               </h2>
-              <p className="text-gray-400 text-sm mt-1 font-mono">Select nodes to advance universal complexity.</p>
+              <p className="text-slate-300 text-sm mt-1 font-mono">Select nodes to advance universal complexity.</p>
           </div>
           <button 
             onClick={onClose} 

@@ -566,11 +566,11 @@ const App: React.FC = () => {
           <div className="flex justify-between items-start">
               {/* Resources */}
               <div className="flex flex-col gap-2 pointer-events-auto">
-                  <div className={`hud-resource-pill text-yellow-300 glass-panel ${energyPulse ? 'animate-pulse' : ''}`}>
+                  <div className={`hud-resource-pill text-amber-200 glass-panel ${energyPulse ? 'animate-pulse' : ''}`}>
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M11.23 13.06l-1.33 4.14a.5.5 0 01-.94 0l-1.33-4.14-.85.35a.5.5 0 01-.59-.64L7.5 7.5H4.5a.5.5 0 01-.4-.8l6-5.5a.5.5 0 01.8 0l6 5.5a.5.5 0 01-.4.8H13.5L12.18 12.77l-.95.29z"/></svg>
                       <span className="font-mono font-bold">{Math.floor(gameState.energy).toLocaleString()}</span>
                   </div>
-                  <div className={`hud-resource-pill text-purple-300 glass-panel ${knowledgePulse ? 'animate-pulse' : ''}`}>
+                  <div className={`hud-resource-pill text-cyan-200 glass-panel ${knowledgePulse ? 'animate-pulse' : ''}`}>
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5.13 5.13a6 6 0 018.48 0L10 10 5.13 5.13zM10 18a6 6 0 01-4.24-1.76l4.24-4.24 4.24 4.24A6 6 0 0110 18z"/></svg>
                       <span className="font-mono font-bold">{Math.floor(gameState.knowledge).toLocaleString()}</span>
                   </div>
@@ -578,15 +578,15 @@ const App: React.FC = () => {
 
               {/* Center Info */}
               <div className="flex flex-col items-center glass-panel px-6 py-2 pointer-events-auto">
-                  <div className="text-xs text-cyan-400 uppercase tracking-widest mb-1 font-bold">{chapterInfo.name}</div>
-                  <div className="w-48 h-1 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500" style={{ width: `${chapterProgress}%` }}></div>
+                  <div className="text-xs text-amber-300 uppercase tracking-widest mb-1 font-bold">{chapterInfo.name}</div>
+                  <div className="w-48 h-1 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-teal-400 via-sky-400 to-amber-300" style={{ width: `${chapterProgress}%` }}></div>
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-1">{chapterInfo.objective}</div>
+                  <div className="text-[10px] text-slate-300 mt-1">{chapterInfo.objective}</div>
                   {/* Karma Bar */}
-                  <div className="w-48 h-1 mt-2 bg-gray-800 rounded-full relative overflow-hidden">
+                  <div className="w-48 h-1 mt-2 bg-slate-800 rounded-full relative overflow-hidden">
                       <div className="absolute top-0 bottom-0 left-0 bg-red-500 w-1/2 opacity-30"></div>
-                      <div className="absolute top-0 bottom-0 right-0 bg-cyan-500 w-1/2 opacity-30"></div>
+                      <div className="absolute top-0 bottom-0 right-0 bg-emerald-400 w-1/2 opacity-30"></div>
                       <div className="absolute top-0 bottom-0 w-1 bg-white" style={{ left: karmaIndicatorPosition, transition: 'left 0.5s ease' }}></div>
                   </div>
               </div>
@@ -594,7 +594,7 @@ const App: React.FC = () => {
               {/* Menu & Notifs */}
               <div className="flex flex-col items-end gap-2 pointer-events-auto">
                   <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full glass-panel hover:bg-white/10 transition-colors">
-                      <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                      <svg className="w-6 h-6 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                   </button>
                   {gameState.notifications.map((msg: string, index: number) => (
                     <Notification key={`${msg}-${index}`} message={msg} onDismiss={() => dispatch({ type: 'DISMISS_NOTIFICATION', payload: { index } })} />
@@ -609,7 +609,7 @@ const App: React.FC = () => {
                   {gameState.inventory.map((item: CollectedItem) => (
                     <button
                       key={item.id}
-                      className="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center hover:border-cyan-400 transition-colors shadow-lg"
+                      className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center hover:border-emerald-300 transition-colors shadow-lg"
                       onClick={() => dispatch({ type: 'USE_ITEM', payload: { itemId: item.id }})}
                       title={item.name}
                     >
@@ -621,13 +621,13 @@ const App: React.FC = () => {
               {/* Main Controls */}
               <div className="flex items-center gap-4 pointer-events-auto">
                   <div className="flex flex-col gap-2">
-                      <button onClick={() => zoom(1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">+</button>
-                      <button onClick={() => zoom(1/1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">-</button>
+                      <button onClick={() => zoom(1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-emerald-200 hover:text-white transition-colors text-xl">+</button>
+                      <button onClick={() => zoom(1/1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-emerald-200 hover:text-white transition-colors text-xl">-</button>
                   </div>
                   
                   <button 
                     onClick={() => setUpgradeModalOpen(true)} 
-                    className="action-button primary neon-button w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(188,19,254,0.3)] border-purple-500"
+                    className="action-button primary neon-button w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(45,212,191,0.35)] border-emerald-400/60"
                   >
                     <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
                   </button>
@@ -637,7 +637,7 @@ const App: React.FC = () => {
       
       {gameState.isPaused && (
           <div className="pause-overlay">
-            <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500 tracking-widest mb-8 font-['Orbitron']">PAUSED</h1>
+            <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-100 to-cyan-300 tracking-widest mb-8 header-font">PAUSED</h1>
             <button onClick={() => dispatch({type: 'SET_PAUSED', payload: false})} className="neon-button h-12 w-48 rounded-lg">RESUME</button>
           </div>
       )}

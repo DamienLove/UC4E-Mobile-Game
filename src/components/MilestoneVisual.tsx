@@ -141,7 +141,7 @@ const getVisuals = (imageUrl?: string): { [key: string]: React.ReactNode } => ({
             <div className="absolute w-2 h-2 bg-yellow-200 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
         </div>
       </div>
-      <div className="absolute inset-0 bg-purple-500 rounded-full opacity-0 particle-zoom-in"></div>
+      <div className="absolute inset-0 bg-amber-400 rounded-full opacity-0 particle-zoom-in"></div>
       <h2 className="milestone-title opacity-0" style={{ animation: 'fadeInSlow 4s 9s forwards' }}>The universe is a holographic projection of entangled consciousness.</h2>
     </div>
   )

@@ -1,10 +1,9 @@
 
-
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Upgrade, GameState, NodeType } from '../types';
-import { getGeminiFlavorText } from '../services/geminiService';
+import { getGeminiFlavorText, generateNodeImage } from '../services/geminiService';
 import { NODE_IMAGE_MAP } from './constants';
+import { getNodeImagePrompt } from '../services/promptService';
 
 interface UpgradeCardProps {
   upgrade: Upgrade;
@@ -17,15 +16,16 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
   const [isExpanded, setIsExpanded] = useState(false);
   const [flavorText, setFlavorText] = useState<string>('');
   const [isLoadingFlavorText, setIsLoadingFlavorText] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
     if (isExpanded && !flavorText && !isLoadingFlavorText) {
       setIsLoadingFlavorText(true);
       getGeminiFlavorText(upgrade.title)
-        .then((text: string) => {
+        .then(text => {
           setFlavorText(text);
         })
-        .catch((err: any) => {
+        .catch(err => {
           console.error(err);
           setFlavorText('"The archives are silent on this matter..."');
         })
@@ -35,17 +35,33 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
     }
   }, [isExpanded, flavorText, isLoadingFlavorText, upgrade.title]);
 
-  const handlePurchase = (e: React.MouseEvent) => {
+  const handlePurchase = async (e: React.MouseEvent) => {
+    // Critical: Stop this click from reaching the card's toggle handler
     e.stopPropagation();
-    if (!isPurchaseable(upgrade)) return;
+    e.preventDefault();
+
+    if (!isPurchaseable(upgrade) || isGeneratingImage) return;
 
     const nodeTypeToGenerate = upgrade.generatesNodeType || upgrade.modifiesNodeTypeTarget;
     let imageUrl: string | undefined;
 
     if (nodeTypeToGenerate) {
-        const images = NODE_IMAGE_MAP[nodeTypeToGenerate as keyof typeof NODE_IMAGE_MAP];
-        if (images && images.length > 0) {
-            imageUrl = images[Math.floor(Math.random() * images.length)];
+        setIsGeneratingImage(true);
+        try {
+            const prompt = getNodeImagePrompt(nodeTypeToGenerate);
+            // Add a timeout race condition to prevent button getting stuck if API hangs
+            const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+            const generatedUrl = await Promise.race([
+                generateNodeImage(prompt),
+                timeoutPromise
+            ]);
+            
+            imageUrl = generatedUrl || NODE_IMAGE_MAP[nodeTypeToGenerate]?.[0];
+        } catch (error) {
+            console.error("Image generation failed, using fallback.", error);
+            imageUrl = NODE_IMAGE_MAP[nodeTypeToGenerate]?.[0];
+        } finally {
+            setIsGeneratingImage(false);
         }
     }
     onPurchase(upgrade, imageUrl);
@@ -53,7 +69,7 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
 
   const unlocked = gameState.unlockedUpgrades.has(upgrade.id);
   const canBuy = isPurchaseable(upgrade);
-  const exclusiveLock = (upgrade.exclusiveWith || []).some((ex: any) => gameState.unlockedUpgrades.has(ex));
+  const exclusiveLock = (upgrade.exclusiveWith || []).some(ex => gameState.unlockedUpgrades.has(ex));
 
   const renderCost = (cost: Upgrade['cost']) => {
     const costString = Object.entries(cost)
@@ -62,58 +78,59 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ upgrade, gameState, onPurchas
     return `Cost: ${costString}`;
   };
   
-  const buttonText = () => {
-      if (unlocked) return 'Unlocked';
-      if (exclusiveLock) return 'Path Not Chosen';
-      return 'Unlock';
+  const getButtonState = () => {
+      if (unlocked) return { text: 'Unlocked', disabled: true, class: 'bg-green-900/50 text-green-200 cursor-not-allowed border border-green-700' };
+      if (exclusiveLock) return { text: 'Unavailable', disabled: true, class: 'bg-red-900/50 text-red-200 cursor-not-allowed border border-red-700' };
+      if (isGeneratingImage) return { text: 'Forging...', disabled: true, class: 'bg-purple-900 text-purple-200 animate-pulse' };
+      if (!canBuy) return { text: 'Insufficient Resources', disabled: true, class: 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed' };
+      return { text: 'Unlock', disabled: false, class: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]' };
   }
+
+  const btnState = getButtonState();
 
   return (
     <div 
       data-tutorial-id={upgrade.id}
-      className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
-        unlocked ? 'bg-emerald-900/40 border-emerald-500/60' : 'bg-slate-900/80 border-slate-700 hover:border-cyan-400'
+      className={`p-4 rounded-lg border transition-all duration-300 relative z-10 ${
+        unlocked ? 'bg-green-950/30 border-green-800' : 'bg-gray-900/80 border-gray-700 hover:border-purple-500'
       }`}
-      onClick={() => setIsExpanded(!isExpanded)}
+      style={{ cursor: 'pointer', touchAction: 'manipulation' }}
+      onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
     >
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-xl font-bold text-cyan-200">{upgrade.title}</h3>
-          <p className="text-slate-300 mt-1">{upgrade.description}</p>
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+        <div className="flex-1">
+          <h3 className={`text-xl font-bold ${unlocked ? 'text-green-400' : 'text-cyan-300'}`}>{upgrade.title}</h3>
+          <p className="text-gray-400 mt-1 text-sm leading-relaxed">{upgrade.description}</p>
         </div>
         <button
           onClick={handlePurchase}
-          disabled={!canBuy || unlocked || exclusiveLock}
-          className={`px-4 py-2 rounded transition-colors ml-4 whitespace-nowrap ${
-            unlocked ? 'bg-gray-600 cursor-not-allowed' :
-            exclusiveLock ? 'bg-red-900 text-gray-500 cursor-not-allowed' :
-            canBuy ? 'bg-amber-500 hover:bg-amber-400 text-slate-900' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          }`}
+          disabled={btnState.disabled}
+          className={`px-6 py-3 rounded-md font-bold text-sm uppercase tracking-wider transition-all min-w-[140px] z-20 relative ${btnState.class}`}
         >
-          {buttonText()}
+          {btnState.text}
         </button>
       </div>
 
-      <div className="mt-2 flex justify-between items-center text-sm">
-        <span className="text-amber-300">{renderCost(upgrade.cost)}</span>
-        <div className="text-xs text-right text-slate-400">
-           <p>Chapter: {upgrade.chapter + 1}</p>
+      <div className="mt-3 flex flex-wrap justify-between items-center text-xs border-t border-gray-800 pt-3">
+        <span className={`${unlocked ? 'text-green-500' : 'text-yellow-400'} font-mono`}>{renderCost(upgrade.cost)}</span>
+        <div className="text-right text-gray-500 space-x-3">
+           <span>CH {upgrade.chapter + 1}</span>
           {upgrade.prerequisites && upgrade.prerequisites.length > 0 && (
-            <p>Requires: {(upgrade.prerequisites || []).map((p: string) => p.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')).join(' AND ')}</p>
+            <span>REQ: {(upgrade.prerequisites || []).length}</span>
           )}
           {upgrade.karmaRequirementText && (
-            <p className="text-amber-300">{upgrade.karmaRequirementText}</p>
+            <span className="text-purple-400">{upgrade.karmaRequirementText}</span>
           )}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          {isLoadingFlavorText && <p className="text-slate-400 italic">Recalling passages from 'Universe Connected for Everyone'...</p>}
+        <div className="mt-4 pt-4 border-t border-gray-800" onClick={e => e.stopPropagation()}>
+          {isLoadingFlavorText && <p className="text-gray-500 italic animate-pulse">Consulting the archives...</p>}
           {flavorText && !isLoadingFlavorText && (
-            <blockquote className="text-cyan-200 italic border-l-2 border-amber-300 pl-3">
+            <blockquote className="text-purple-300 italic border-l-2 border-purple-500/50 pl-3 bg-purple-900/10 p-2 rounded-r">
               {flavorText}
-              <cite className="block text-right text-amber-200/80 not-italic mt-1">— Universe Connected for Everyone</cite>
+              <cite className="block text-right text-purple-400/60 not-italic mt-2 text-xs uppercase tracking-widest">— Universe Connected for Everyone</cite>
             </blockquote>
           )}
         </div>

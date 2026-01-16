@@ -175,24 +175,6 @@ export const UPGRADES: Upgrade[] = [
         return { ...gs, karma: gs.karma + 20 };
     }
   },
-  {
-    id: 'cosmic_balance',
-    title: 'Cosmic Balance',
-    description: "Influence the universe's path towards harmony or chaos.",
-    cost: { knowledge: 500, biomass: 200 },
-    chapter: 3,
-    karmaRequirement: (k) => k < 0,
-    karmaRequirementText: 'Requires Chaotic Karma',
-    effect: (gs) => {
-      let newKarma = gs.karma;
-      if (gs.karma < 0) {
-        newKarma += 20;
-      } else if (gs.karma > 0) {
-        newKarma -= 20;
-      }
-      return { ...gs, karma: newKarma };
-    },
-  },
   // CHAPTER 4: Transcending Matter
   {
     id: 'quantum_computing',
@@ -276,8 +258,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     { text: "A directional line is now spinning around you. <strong class='text-cyan-400'>Click anywhere</strong> to set your trajectory.", highlight: '.simulation-container' },
     { text: "Now set your launch power. <strong class='text-cyan-400'>Click again</strong> when the meter reaches the desired strength.", highlight: '#power-meter-container' },
     { text: "You are now in motion. Collide with objects to interact. You will reform after coming to a stop.", highlight: '.simulation-container' },
-    { text: "Open the <strong class='text-purple-400'>Evolutionary Matrix</strong>. Use your energy and knowledge to unlock new possibilities.", highlight: '.action-button:first-of-type' },
-    { text: "Find and Unlock <strong class='text-gold-400'>Quantum Tunneling</strong> to transcend space itself.", highlight: '[data-tutorial-id="quantum_tunneling"]' },
+    { text: "Open the <strong class='text-purple-400'>Evolutionary Matrix</strong>. Your ultimate goal is to unlock <strong class='text-gold-400'>Quantum Tunneling</strong> to transcend space itself.", highlight: '.action-button:first-of-type' },
 ];
 
 export const CROSSROADS_EVENTS: CrossroadsEvent[] = [

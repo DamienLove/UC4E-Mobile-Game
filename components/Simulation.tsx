@@ -1,5 +1,10 @@
 
-import React from 'react';
+
+
+
+
+
+import React, { useRef } from 'react';
 import { GameAction, GameState, WorldTransform } from '../types';
 import RadialMenu from './RadialMenu';
 import LoreTooltip from './LoreTooltip';
@@ -25,7 +30,7 @@ interface SimulationProps {
 const PLAYER_HUNT_RANGE = 150;
 const REFORM_DURATION = 120; // Must match constant in App.tsx
 
-const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, isPanningRef }) => {
+const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, screenToWorld, isPanningRef }) => {
   const { width, height } = dimensions;
 
   const playerNode = gameState.nodes.find(n => n.type === 'player_consciousness');
@@ -35,6 +40,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
   };
   
   const handlePlayerInteraction = (e: React.MouseEvent) => {
+    // This function now handles the entire projection state machine on clicks
     switch (gameState.projection.playerState) {
         case 'IDLE':
             dispatch({ type: 'START_AIMING' });
@@ -46,11 +52,13 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             dispatch({ type: 'LAUNCH_PLAYER' });
             break;
         default:
+            // Do nothing if projecting or reforming
             break;
     }
   };
 
   const handleContainerClick = (e: React.MouseEvent) => {
+    // Allow clicking anywhere to control the player
     if (e.target === e.currentTarget && !isPanningRef.current) {
         if(gameState.selectedNodeId) {
             dispatch({ type: 'SELECT_NODE', payload: { nodeId: null } });
@@ -85,6 +93,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
   
   const worldRadius = (Math.min(width, height) * 1.5) / (gameState.zoomLevel + 1);
 
+  // Calculate aim angle for locked target
   const lockedOnTarget = gameState.nodes.find(n => n.id === gameState.aimAssistTargetId);
   let aimAngle = gameState.projection.aimAngle;
   if (playerNode && lockedOnTarget) {
@@ -231,14 +240,10 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         
         {/* Render Cosmic Events */}
         {gameState.cosmicEvents.map(event => {
-            const r = event.radius || 0;
-            const ex = event.x || 0;
-            const ey = event.y || 0;
-
             if (event.type === 'supernova' && event.phase === 'active') {
-                const baseSize = r * 2;
+                const baseSize = event.radius * 2;
                 const containerStyle: React.CSSProperties = {
-                    left: `${ex}px`, top: `${ey}px`,
+                    left: `${event.x}px`, top: `${event.y}px`,
                     width: `${baseSize}px`, height: `${baseSize}px`,
                 };
                 return (
@@ -262,44 +267,30 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             if (event.type === 'gravitational_anomaly') {
                 return (
                      <div key={event.id} className="anomaly-vortex" style={{
-                         left: `${ex}px`, top: `${ey}px`,
-                         width: `${r * 2}px`, height: `${r * 2}px`
+                         left: `${event.x}px`, top: `${event.y}px`,
+                         width: `${event.radius * 2}px`, height: `${event.radius * 2}px`
                      }} />
                 );
             }
             if (event.type === 'resource_bloom') {
                  return (
                      <div key={event.id} className="resource-bloom" style={{
-                         left: `${ex}px`, top: `${ey}px`,
-                         width: `${r * 2}px`, height: `${r * 2}px`,
+                         left: `${event.x}px`, top: `${event.y}px`,
+                         width: `${event.radius * 2}px`, height: `${event.radius * 2}px`,
                          opacity: event.duration < 300 ? (event.duration / 300) : 1, // Fade out
                      }} />
                  );
             }
             if (event.type === 'black_hole') {
                  return (
-                     <div key={event.id} style={{ left: `${ex}px`, top: `${ey}px`, pointerEvents: 'none' }}>
-                         <div className="black-hole-core" style={{ width: `${r * 2}px`, height: `${r * 2}px` }} />
-                         <div className="black-hole-accretion-disk" style={{ width: `${r * 4}px`, height: `${r * 4}px` }} />
+                     <div key={event.id} style={{ left: `${event.x}px`, top: `${event.y}px`, pointerEvents: 'none' }}>
+                         <div className="black-hole-core" style={{ width: `${event.radius * 2}px`, height: `${event.radius * 2}px` }} />
+                         <div className="black-hole-accretion-disk" style={{ width: `${event.radius * 4}px`, height: `${event.radius * 4}px` }} />
                      </div>
                  );
             }
             return null;
         })}
-
-        {/* Render Phages */}
-        {gameState.phages.map(phage => (
-            <div
-                key={phage.id}
-                className="phage-entity"
-                style={{
-                    left: `${phage.x}px`,
-                    top: `${phage.y}px`,
-                    width: `${phage.radius * 2}px`,
-                    height: `${phage.radius * 2}px`,
-                }}
-            />
-        ))}
 
         {/* Render Anomaly Particles */}
         {gameState.anomalyParticles.map(p => (
@@ -335,6 +326,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                 />
             );
         })}
+        {/* FIX: The component was truncated. Added missing rendering logic for blooms, flares, nodes, and other UI elements. */}
         {/* Render Collection Blooms */}
         {gameState.collectionBlooms.map(bloom => {
             const progress = 1 - (bloom.life / 24.0); // 0 to 1
@@ -395,13 +387,10 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             let warpingClassName = '';
             if (blackHoles.length > 0) {
                 for (const bh of blackHoles) {
-                    const bhX = bh.x || 0;
-                    const bhY = bh.y || 0;
-                    const bhR = bh.radius || 0;
-                    const dx = node.x - bhX;
-                    const dy = node.y - bhY;
+                    const dx = node.x - bh.x;
+                    const dy = node.y - bh.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    const influenceRadius = bhR * 4;
+                    const influenceRadius = bh.radius * 4;
                     if (dist < influenceRadius) {
                         warpingClassName = 'node-warping';
                         break;

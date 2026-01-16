@@ -20,15 +20,15 @@ const CreditsModal: React.FC<CreditsModalProps> = ({ onClose }) => {
         </div>
         
         <div className="space-y-4 text-lg text-gray-300">
-            <p>Based on the novel <br/> <strong className="text-emerald-300">'Universe Connected for Everyone'</strong></p>
-            <p>by <strong className="text-amber-200">Damien Nichols</strong></p>
+            <p>Based on the novel <br/> <strong className="text-teal-300">'Universe Connected for Everyone'</strong></p>
+            <p>by <strong className="text-purple-300">Damien Nichols</strong></p>
             <div className="pt-4 mt-4 border-t border-gray-700">
                 <p>Interactive Experience <br/> Developed by an AI Agent</p>
             </div>
         </div>
         
         <div className="mt-8 text-center">
-            <button onClick={onClose} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-2 px-6 rounded-lg">
+            <button onClick={onClose} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded-lg">
                 Close
             </button>
         </div>

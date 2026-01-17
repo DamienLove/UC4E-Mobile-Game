@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameAction, GameState } from '../types';
 
@@ -30,13 +29,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
       onClick={handleBackdropClick}
     >
       <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-modal-title"
         className="settings-modal-content glass-panel w-full max-w-md p-6 max-h-[90vh] overflow-y-auto relative z-[1001] flex flex-col gap-6" 
         onClick={(e) => e.stopPropagation()} 
       >
         <div className="flex justify-between items-center shrink-0">
-            <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM</h2>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors cursor-pointer pointer-events-auto">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <h2 id="settings-modal-title" className="text-2xl font-bold header-font text-cyan-300">SYSTEM</h2>
+            <button
+                onClick={onClose}
+                aria-label="Close settings"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors cursor-pointer pointer-events-auto"
+            >
+                <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
         
@@ -47,17 +53,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
                 onClick={handleSave}
                 className="neon-button h-12 rounded flex items-center justify-center gap-2 border-green-500/50 text-green-300 hover:bg-green-500/10 pointer-events-auto"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                 SAVE SIMULATION
               </button>
           </div>
 
           <div>
             <div className="flex justify-between mb-2">
-                <label className="text-gray-400 text-xs uppercase tracking-wider">SFX Volume</label>
+                <label htmlFor="sfx-volume" className="text-gray-400 text-xs uppercase tracking-wider">SFX Volume</label>
                 <span className="text-xs font-mono text-cyan-400">{Math.round(settings.sfxVolume * 100)}%</span>
             </div>
             <input
+              id="sfx-volume"
               type="range"
               min="0"
               max="1"
@@ -70,10 +77,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
 
           <div>
             <div className="flex justify-between mb-2">
-                <label className="text-gray-400 text-xs uppercase tracking-wider">Music Volume</label>
+                <label htmlFor="music-volume" className="text-gray-400 text-xs uppercase tracking-wider">Music Volume</label>
                 <span className="text-xs font-mono text-cyan-400">{Math.round(settings.musicVolume * 100)}%</span>
             </div>
             <input
+              id="music-volume"
               type="range"
               min="0"
               max="1"
@@ -85,8 +93,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Color Mode</label>
+            <label htmlFor="color-mode" className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Color Mode</label>
             <select
+              id="color-mode"
               className="w-full p-3 bg-black/60 border border-gray-600 rounded text-white focus:border-cyan-500 outline-none pointer-events-auto"
               value={settings.colorblindMode}
               onChange={(e) => handleSettingChange('colorblindMode', e.target.value)}

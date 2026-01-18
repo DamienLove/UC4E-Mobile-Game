@@ -29,7 +29,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
       <div className="glass-panel w-full max-w-lg p-8">
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
+            <button onClick={onClose} aria-label="Close Settings" title="Close Settings" className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
         </div>
         
         <div className="space-y-6">
@@ -45,8 +45,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">SFX Volume</label>
+            <label htmlFor="sfx-volume" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">SFX Volume</label>
             <input
+              id="sfx-volume"
               type="range"
               min="0"
               max="1"
@@ -58,8 +59,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Music Volume</label>
+            <label htmlFor="music-volume" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Music Volume</label>
             <input
+              id="music-volume"
               type="range"
               min="0"
               max="1"
@@ -71,8 +73,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Visual Accessibility</label>
+            <label htmlFor="color-mode" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Visual Accessibility</label>
             <select
+              id="color-mode"
               className="w-full p-2 bg-black/50 border border-gray-600 rounded text-white focus:border-cyan-500 outline-none"
               value={settings.colorblindMode}
               onChange={(e) => handleSettingChange('colorblindMode', e.target.value)}

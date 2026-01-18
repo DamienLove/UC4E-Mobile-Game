@@ -35,7 +35,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
       >
         <div className="flex justify-between items-center shrink-0">
             <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM</h2>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors cursor-pointer pointer-events-auto">
+            <button onClick={onClose} aria-label="Close Settings" title="Close Settings" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors cursor-pointer pointer-events-auto">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
@@ -54,10 +54,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
 
           <div>
             <div className="flex justify-between mb-2">
-                <label className="text-gray-400 text-xs uppercase tracking-wider">SFX Volume</label>
+                <label htmlFor="sfx-volume" className="text-gray-400 text-xs uppercase tracking-wider">SFX Volume</label>
                 <span className="text-xs font-mono text-cyan-400">{Math.round(settings.sfxVolume * 100)}%</span>
             </div>
             <input
+              id="sfx-volume"
               type="range"
               min="0"
               max="1"
@@ -70,10 +71,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
 
           <div>
             <div className="flex justify-between mb-2">
-                <label className="text-gray-400 text-xs uppercase tracking-wider">Music Volume</label>
+                <label htmlFor="music-volume" className="text-gray-400 text-xs uppercase tracking-wider">Music Volume</label>
                 <span className="text-xs font-mono text-cyan-400">{Math.round(settings.musicVolume * 100)}%</span>
             </div>
             <input
+              id="music-volume"
               type="range"
               min="0"
               max="1"
@@ -85,8 +87,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Color Mode</label>
+            <label htmlFor="color-mode" className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Color Mode</label>
             <select
+              id="color-mode"
               className="w-full p-3 bg-black/60 border border-gray-600 rounded text-white focus:border-cyan-500 outline-none pointer-events-auto"
               value={settings.colorblindMode}
               onChange={(e) => handleSettingChange('colorblindMode', e.target.value)}

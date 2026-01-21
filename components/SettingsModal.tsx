@@ -29,7 +29,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
       <div className="glass-panel w-full max-w-lg p-8">
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
+            <button onClick={onClose} className="text-gray-400 hover:text-white text-4xl leading-none" aria-label="Close Settings" title="Close Settings">&times;</button>
         </div>
         
         <div className="space-y-6">

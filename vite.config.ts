@@ -40,4 +40,7 @@ export default defineConfig({
       }
     })
   ],
+  define: {
+    'process.env.API_KEY': JSON.stringify('PLACEHOLDER_API_KEY')
+  }
 });

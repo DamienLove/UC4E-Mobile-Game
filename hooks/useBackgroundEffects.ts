@@ -1,4 +1,4 @@
-import { useRef, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 
 // For twinkling stars
 interface TwinklingStar {
@@ -70,28 +70,37 @@ export const useBackgroundEffects = (width: number, height: number, isQuantumFoa
   const meteors = useRef<Meteor[]>([]);
   const quantumFoam = useRef<QuantumParticle[]>([]);
 
-  useMemo(() => {
+  // Effect for initializing stars, runs only when dimensions change
+  useEffect(() => {
     if (width > 0 && height > 0) {
       twinklingStars.current = Array.from({ length: NUM_TWINKLING_STARS }).map(() => createTwinklingStar(width, height));
       meteors.current = []; // Start with no meteors
-      if (isQuantumFoamActive) {
-          quantumFoam.current = Array.from({length: NUM_QUANTUM_PARTICLES}).map(() => createQuantumParticle(width, height));
-      } else {
-          quantumFoam.current = [];
-      }
+    }
+  }, [width, height]);
+
+  // Effect for quantum foam, runs when dimensions or the active flag change
+  useEffect(() => {
+    if (width > 0 && height > 0 && isQuantumFoamActive) {
+      quantumFoam.current = Array.from({ length: NUM_QUANTUM_PARTICLES }).map(() => createQuantumParticle(width, height));
+    } else {
+      quantumFoam.current = [];
     }
   }, [width, height, isQuantumFoamActive]);
+
 
   const updateEffects = useCallback(() => {
     if (!width || !height) return;
 
-    // Update existing meteors, removing them once their life ends
-    meteors.current = meteors.current.filter(m => {
+    // Update existing meteors with in-place removal
+    for (let i = meteors.current.length - 1; i >= 0; i--) {
+        const m = meteors.current[i];
         m.x += m.vx;
         m.y += m.vy;
         m.life--;
-        return m.life > 0;
-    });
+        if (m.life <= 0) {
+            meteors.current.splice(i, 1);
+        }
+    }
 
     // Randomly spawn new meteors
     if (Math.random() < METEOR_CHANCE_PER_FRAME) {

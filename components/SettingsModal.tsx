@@ -25,11 +25,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
   };
 
   return (
-    <div className="modal-backdrop" onClick={handleBackdropClick}>
+    <div className="modal-backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div className="glass-panel w-full max-w-lg p-8">
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
+            <h2 id="settings-title" className="text-2xl font-bold header-font text-cyan-300">SYSTEM OPTIONS</h2>
+            <button onClick={onClose} aria-label="Close settings" className="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
         </div>
         
         <div className="space-y-6">
@@ -45,8 +45,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">SFX Volume</label>
+            <label htmlFor="sfx-volume" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">SFX Volume</label>
             <input
+              id="sfx-volume"
               type="range"
               min="0"
               max="1"
@@ -58,8 +59,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Music Volume</label>
+            <label htmlFor="music-volume" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Music Volume</label>
             <input
+              id="music-volume"
               type="range"
               min="0"
               max="1"
@@ -71,8 +73,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Visual Accessibility</label>
+            <label htmlFor="colorblind-mode" className="block text-gray-400 text-sm uppercase tracking-wider mb-2">Visual Accessibility</label>
             <select
+              id="colorblind-mode"
               className="w-full p-2 bg-black/50 border border-gray-600 rounded text-white focus:border-cyan-500 outline-none"
               value={settings.colorblindMode}
               onChange={(e) => handleSettingChange('colorblindMode', e.target.value)}
@@ -94,7 +97,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, dispatch, onClo
                   checked={settings.aimAssist}
                   onChange={(e) => handleSettingChange('aimAssist', e.target.checked)}
                 />
-                <div className="w-14 h-8 bg-gray-700 rounded-full peer-checked:bg-cyan-600 transition-colors border border-gray-600"></div>
+                <div className="w-14 h-8 bg-gray-700 rounded-full peer-checked:bg-cyan-600 transition-colors border border-gray-600 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-gray-900"></div>
                 <div className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 shadow-md"></div>
               </div>
             </label>

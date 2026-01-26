@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Upgrade, GameState, NodeType } from '../types';
+import { Upgrade, GameState } from '../types';
 import { getGeminiFlavorText } from '../services/geminiService';
 import { NODE_IMAGE_MAP } from './constants';
 

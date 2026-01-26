@@ -1,10 +1,10 @@
 
 import React, { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { GameState, GameAction, Upgrade, EnergyOrb, GameNode, QuantumPhage, CollectionEffect, CosmicEvent, AnomalyParticle, ConnectionParticle, WorldTransform, ProjectionState, CollectedItem } from '../types';
-import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, CROSSROADS_EVENTS, NODE_IMAGE_MAP } from './constants';
+import { GameState, GameAction, EnergyOrb, ProjectionState } from '../types';
+import { UPGRADES, CHAPTERS, TUTORIAL_STEPS, NODE_IMAGE_MAP } from './constants';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { audioService } from '../services/AudioService';
-import { generateNodeImage, getGeminiLoreForNode } from '../services/geminiService';
+import { generateNodeImage } from '../services/geminiService';
 import { useWorldScale } from '../hooks/useWorldScale';
 
 import Simulation from './Simulation';
@@ -30,19 +30,19 @@ const LIFE_BIOMASS_RATE = 0.2;
 const COLLECTIVE_UNITY_RATE = 0.1;
 const DATA_GENERATION_RATE = 0.2;
 const STAR_ORB_SPAWN_CHANCE = 0.005;
-const PHAGE_SPAWN_CHANCE = 0.0001;
-const PHAGE_ATTRACTION = 0.01;
-const PHAGE_DRAIN_RATE = 0.5;
-const PLAYER_HUNT_RANGE = 150;
+// const _PHAGE_SPAWN_CHANCE = 0.0001;
+// const _PHAGE_ATTRACTION = 0.01;
+// const _PHAGE_DRAIN_RATE = 0.5;
+// const _PLAYER_HUNT_RANGE = 150;
 const SUPERNOVA_WARNING_TICKS = 1800; 
-const SUPERNOVA_EXPLOSION_TICKS = 120; 
-const ANOMALY_DURATION_TICKS = 1200; 
-const ANOMALY_PULL_STRENGTH = 0.1;
-const BLOOM_DURATION_TICKS = 2400; 
-const BLOOM_SPAWN_MULTIPLIER = 20;
-const BLACK_HOLE_SPAWN_CHANCE = 0.00005;
-const BLACK_HOLE_DURATION_TICKS = 3600; 
-const BLACK_HOLE_PULL_STRENGTH = 100;
+// const _SUPERNOVA_EXPLOSION_TICKS = 120;
+// const _ANOMALY_DURATION_TICKS = 1200;
+// const _ANOMALY_PULL_STRENGTH = 0.1;
+// const _BLOOM_DURATION_TICKS = 2400;
+// const _BLOOM_SPAWN_MULTIPLIER = 20;
+// const _BLACK_HOLE_SPAWN_CHANCE = 0.00005;
+// const _BLACK_HOLE_DURATION_TICKS = 3600;
+// const _BLACK_HOLE_PULL_STRENGTH = 100;
 
 const AIM_ROTATION_SPEED = 0.05; 
 const POWER_OSCILLATION_SPEED = 1.5; 
@@ -53,9 +53,9 @@ const REFORM_DURATION = 120;
 const ORB_COLLECTION_LEEWAY = 10; 
 const AIM_ASSIST_ANGLE = 0.1; 
 
-const TUNNEL_CHANCE_PER_TICK = 0.0005;
-const TUNNEL_DISTANCE = 400;
-const TUNNEL_DURATION_TICKS = 60; 
+// const _TUNNEL_CHANCE_PER_TICK = 0.0005;
+// const _TUNNEL_DISTANCE = 400;
+// const _TUNNEL_DURATION_TICKS = 60;
 
 const SAVE_GAME_KEY = 'universe-connected-save';
 
@@ -165,7 +165,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'TICK': {
       if (state.isPaused) return state;
       let nextState = { ...state };
-      const { width, height, transform } = action.payload;
+      const { width, height } = action.payload;
       const worldRadius = (Math.min(width, height) * 1.5) / (state.zoomLevel + 1);
       
       let mutableNodes = nextState.nodes.map(n => ({...n}));
@@ -262,7 +262,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         nextState.data += DATA_GENERATION_RATE;
       }
       
-      const nodesToRemove = new Set<string>();
+      // const nodesToRemove = new Set<string>();
       let newEnergyOrbs: EnergyOrb[] = [];
       let nextCosmicEvents = [...nextState.cosmicEvents];
       
@@ -510,8 +510,8 @@ const App: React.FC = () => {
     prevResources.current = { energy: gameState.energy, knowledge: gameState.knowledge };
   }, [gameState.energy, gameState.knowledge]);
 
-  const { transform, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, screenToWorld: rawScreenToWorld, zoom, isPanningRef } = useWorldScale(0.4);
-  const screenToWorld = useCallback((x: number, y: number) => rawScreenToWorld(x, y, dimensions), [rawScreenToWorld, dimensions]);
+  const { transform, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove,  zoom, isPanningRef } = useWorldScale(0.4);
+
 
   useGameLoop(dispatch, dimensions, gameState.isPaused, transform);
 
@@ -554,7 +554,7 @@ const App: React.FC = () => {
           isZoomingOut={gameState.levelTransitionState === 'zooming'}
           transform={transform}
           worldScaleHandlers={{handleWheel, handleMouseDown, handleMouseUp, handleMouseMove}}
-          screenToWorld={screenToWorld}
+
           isPanningRef={isPanningRef}
         />
       </div>
@@ -593,8 +593,8 @@ const App: React.FC = () => {
 
               {/* Menu & Notifs */}
               <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                  <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full glass-panel hover:bg-white/10 transition-colors">
-                      <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                  <button onClick={() => setSettingsModalOpen(true)} aria-label="Open Settings" className="p-2 rounded-full glass-panel hover:bg-white/10 transition-colors">
+                      <svg aria-hidden="true" className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                   </button>
                   {gameState.notifications.map((msg, index) => (
                     <Notification key={`${msg}-${index}`} message={msg} onDismiss={() => dispatch({ type: 'DISMISS_NOTIFICATION', payload: { index } })} />
@@ -612,8 +612,9 @@ const App: React.FC = () => {
                       className="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center hover:border-cyan-400 transition-colors shadow-lg"
                       onClick={() => dispatch({ type: 'USE_ITEM', payload: { itemId: item.id }})}
                       title={item.name}
+                      aria-label={`Use ${item.name}`}
                     >
-                        <div className={`w-8 h-8 icon-${item.icon} bg-cover opacity-80`}></div>
+                        <div aria-hidden="true" className={`w-8 h-8 icon-${item.icon} bg-cover opacity-80`}></div>
                     </button>
                   ))}
               </div>
@@ -621,15 +622,16 @@ const App: React.FC = () => {
               {/* Main Controls */}
               <div className="flex items-center gap-4 pointer-events-auto">
                   <div className="flex flex-col gap-2">
-                      <button onClick={() => zoom(1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">+</button>
-                      <button onClick={() => zoom(1/1.2)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">-</button>
+                      <button onClick={() => zoom(1.2)} aria-label="Zoom In" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">+</button>
+                      <button onClick={() => zoom(1/1.2)} aria-label="Zoom Out" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-cyan-300 hover:text-white transition-colors text-xl">-</button>
                   </div>
                   
                   <button 
                     onClick={() => setUpgradeModalOpen(true)} 
+                    aria-label="Open Upgrades"
                     className="action-button primary neon-button w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(188,19,254,0.3)] border-purple-500"
                   >
-                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                    <svg aria-hidden="true" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
                   </button>
               </div>
           </div>

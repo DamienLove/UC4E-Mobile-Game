@@ -7,9 +7,7 @@ export default defineConfig({
   // IMPORTANT: Replace with your repository name.
   base: '/Universe-Connected-for-everyone-/',
   define: {
-    'process.env': {
-      API_KEY: 'PLACEHOLDER_API_KEY'
-    }
+    'process.env.API_KEY': JSON.stringify('PLACEHOLDER_API_KEY')
   },
   plugins: [
     react(),

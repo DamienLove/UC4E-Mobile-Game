@@ -4,7 +4,7 @@
 
 
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { GameAction, GameState, WorldTransform } from '../types';
 import RadialMenu from './RadialMenu';
 import LoreTooltip from './LoreTooltip';
@@ -23,14 +23,14 @@ interface SimulationProps {
     handleMouseUp: () => void;
     handleMouseMove: (event: React.MouseEvent) => void;
   };
-  screenToWorld: (screenX: number, screenY: number) => { x: number; y: number };
+
   isPanningRef: React.MutableRefObject<boolean>;
 }
 
 const PLAYER_HUNT_RANGE = 150;
 const REFORM_DURATION = 120; // Must match constant in App.tsx
 
-const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, screenToWorld, isPanningRef }) => {
+const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, isPanningRef }) => {
   const { width, height } = dimensions;
 
   const playerNode = gameState.nodes.find(n => n.type === 'player_consciousness');
@@ -39,7 +39,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
     dispatch({ type: 'SELECT_NODE', payload: { nodeId } });
   };
   
-  const handlePlayerInteraction = (e: React.MouseEvent) => {
+  const handlePlayerInteraction = (_e: React.MouseEvent) => {
     // This function now handles the entire projection state machine on clicks
     switch (gameState.projection.playerState) {
         case 'IDLE':
@@ -241,7 +241,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         {/* Render Cosmic Events */}
         {gameState.cosmicEvents.map(event => {
             if (event.type === 'supernova' && event.phase === 'active') {
-                const baseSize = event.radius * 2;
+                const baseSize = (event.radius || 0) * 2;
                 const containerStyle: React.CSSProperties = {
                     left: `${event.x}px`, top: `${event.y}px`,
                     width: `${baseSize}px`, height: `${baseSize}px`,
@@ -268,7 +268,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                 return (
                      <div key={event.id} className="anomaly-vortex" style={{
                          left: `${event.x}px`, top: `${event.y}px`,
-                         width: `${event.radius * 2}px`, height: `${event.radius * 2}px`
+                         width: `${(event.radius || 0) * 2}px`, height: `${(event.radius || 0) * 2}px`
                      }} />
                 );
             }
@@ -276,7 +276,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
                  return (
                      <div key={event.id} className="resource-bloom" style={{
                          left: `${event.x}px`, top: `${event.y}px`,
-                         width: `${event.radius * 2}px`, height: `${event.radius * 2}px`,
+                         width: `${(event.radius || 0) * 2}px`, height: `${(event.radius || 0) * 2}px`,
                          opacity: event.duration < 300 ? (event.duration / 300) : 1, // Fade out
                      }} />
                  );
@@ -284,8 +284,8 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             if (event.type === 'black_hole') {
                  return (
                      <div key={event.id} style={{ left: `${event.x}px`, top: `${event.y}px`, pointerEvents: 'none' }}>
-                         <div className="black-hole-core" style={{ width: `${event.radius * 2}px`, height: `${event.radius * 2}px` }} />
-                         <div className="black-hole-accretion-disk" style={{ width: `${event.radius * 4}px`, height: `${event.radius * 4}px` }} />
+                         <div className="black-hole-core" style={{ width: `${(event.radius || 0) * 2}px`, height: `${(event.radius || 0) * 2}px` }} />
+                         <div className="black-hole-accretion-disk" style={{ width: `${(event.radius || 0) * 4}px`, height: `${(event.radius || 0) * 4}px` }} />
                      </div>
                  );
             }
@@ -387,10 +387,10 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
             let warpingClassName = '';
             if (blackHoles.length > 0) {
                 for (const bh of blackHoles) {
-                    const dx = node.x - bh.x;
-                    const dy = node.y - bh.y;
+                    const dx = node.x - (bh.x || 0);
+                    const dy = node.y - (bh.y || 0);
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    const influenceRadius = bh.radius * 4;
+                    const influenceRadius = (bh.radius || 0) * 4;
                     if (dist < influenceRadius) {
                         warpingClassName = 'node-warping';
                         break;

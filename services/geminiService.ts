@@ -3,9 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 import { GameNode, Chapter } from '../types';
 
 
-// Always use new GoogleGenAI({apiKey: process.env.API_KEY});
+// Always use new GoogleGenAI({apiKey: (process.env.API_KEY || '') || ''});
 // The API key MUST be obtained exclusively from the environment variable `process.env.API_KEY`.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY || '') });
 
 export const getGeminiFlavorText = async (concept: string): Promise<string> => {
   try {
@@ -99,7 +99,7 @@ export const generateNodeImage = async (prompt: string): Promise<string | null> 
             });
 
             if (response.generatedImages && response.generatedImages.length > 0) {
-                const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+                const base64ImageBytes: string = response.generatedImages[0].image?.imageBytes || '';
                 return `data:image/png;base64,${base64ImageBytes}`;
             }
             console.warn("The image generation API did not return an image. This might be due to safety filters or a transient issue.");

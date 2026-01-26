@@ -214,7 +214,7 @@ export const CHAPTERS: Chapter[] = [
     {
       id: 0, name: "The Void", 
       description: "Before time, before light, there was only you. A potential waiting to unfold.",
-      unlockCondition: (gs: GameState) => true,
+      unlockCondition: () => true,
       objective: "Ignite the first star.",
       quote: "In the beginning, there was nothing. And it was boring.",
       entityType: 'gas',

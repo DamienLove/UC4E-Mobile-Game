@@ -9,7 +9,7 @@ interface LevelTransitionProps {
 
 const ZOOM_ANIMATION_DURATION = 3000; // 3 seconds, must match CSS animation
 
-const LevelTransition: React.FC<LevelTransitionProps> = ({ levelState, zoomLevel, dispatch }) => {
+const LevelTransition: React.FC<LevelTransitionProps> = ({ levelState, dispatch }) => {
 
   useEffect(() => {
     if (levelState === 'zooming') {

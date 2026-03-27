@@ -6,6 +6,7 @@ import { useGameLoop } from '../hooks/useGameLoop';
 import { audioService } from '../services/AudioService';
 import { generateNodeImage } from '../services/geminiService';
 import { useWorldScale } from '../hooks/useWorldScale';
+import { QuadTree } from '../utils/QuadTree';
 
 import Simulation from './Simulation';
 import UpgradeModal from './UpgradeModal';
@@ -341,20 +342,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // --- Physics & Blooms ---
+      // Build QuadTree for O(N log N) gravity
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const node of mutableNodes) {
+          if (node.x < minX) minX = node.x;
+          if (node.y < minY) minY = node.y;
+          if (node.x > maxX) maxX = node.x;
+          if (node.y > maxY) maxY = node.y;
+      }
+
+      const qtPadding = 200;
+      // Ensure we have valid bounds even if mutableNodes is empty (unlikely) or single node
+      if (minX === Infinity) { minX = 0; maxX = 100; minY = 0; maxY = 100; }
+
+      const qt = new QuadTree(minX - qtPadding, minY - qtPadding, (maxX - minX) + qtPadding * 2, (maxY - minY) + qtPadding * 2);
+      mutableNodes.forEach(node => qt.insert(node));
+      qt.calculateMassDistribution();
+
       mutableNodes.forEach(node => {
         if (node.type !== 'player_consciousness') {
-            mutableNodes.forEach(otherNode => {
-              if (node.id === otherNode.id) return;
-              const dx = otherNode.x - node.x;
-              const dy = otherNode.y - node.y;
-              const distSq = dx * dx + dy * dy;
-              if (distSq > 1) {
-                const dist = Math.sqrt(distSq);
-                const force = (otherNode.type === 'star' ? 0.5 : 0.1) * otherNode.radius / distSq;
-                node.vx += (dx / dist) * force;
-                node.vy += (dy / dist) * force;
-              }
-            });
+            const force = qt.calculateForce(node, 0.5);
+            node.vx += force.ax;
+            node.vy += force.ay;
         }
         
         node.x += node.vx;

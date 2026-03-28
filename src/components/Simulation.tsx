@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GameAction, GameState, WorldTransform } from '../types';
+import { GameAction, GameNode, GameState, WorldTransform } from '../types';
 import RadialMenu from './RadialMenu';
 import LoreTooltip from './LoreTooltip';
 import { getGeminiLoreForNode } from '../services/geminiService';
@@ -27,6 +27,15 @@ const REFORM_DURATION = 120; // Must match constant in App.tsx
 
 const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions, isZoomingOut, transform, worldScaleHandlers, isPanningRef }) => {
   const { width, height } = dimensions;
+
+  // Optimize node lookups by creating a map of ID -> Node
+  const nodeMap = React.useMemo(() => {
+    const map = new Map<string, GameNode>();
+    for (const node of gameState.nodes) {
+      map.set(node.id, node);
+    }
+    return map;
+  }, [gameState.nodes]);
 
   const playerNode = gameState.nodes.find(n => n.type === 'player_consciousness');
   
@@ -116,7 +125,7 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
         <svg className="connections-svg">
           {gameState.nodes.map(node =>
             node.connections.map(connId => {
-              const target = gameState.nodes.find(n => n.id === connId);
+              const target = nodeMap.get(connId);
               if (!target) return null;
               return (
                 <line
@@ -203,8 +212,8 @@ const Simulation: React.FC<SimulationProps> = ({ gameState, dispatch, dimensions
 
         {/* Render Connection Pulses */}
         {gameState.connectionParticles.map(particle => {
-            const source = gameState.nodes.find(n => n.id === particle.sourceId);
-            const target = gameState.nodes.find(n => n.id === particle.targetId);
+            const source = nodeMap.get(particle.sourceId);
+            const target = nodeMap.get(particle.targetId);
             if (!source || !target) return null;
 
             const x = source.x + (target.x - source.x) * particle.progress;
